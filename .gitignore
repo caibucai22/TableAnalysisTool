@@ -13,12 +13,13 @@ cache
 
 
 # images
-tests/compare_result/**
 *.png
 *.jpg
 *.jpeg
 *.gif
 *.webp
+!test_images/*
+!table.jpg
 #
 *.html
 *.xlsx
