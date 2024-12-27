@@ -20,6 +20,7 @@ cache
 *.webp
 !test_images/*
 !table.jpg
+!resources/*
 #
 *.html
 *.xlsx
