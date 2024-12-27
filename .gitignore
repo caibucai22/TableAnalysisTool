@@ -1,0 +1,29 @@
+# idea
+.idea
+
+# vscode
+.vscode
+.history
+
+__pycache__
+**/__pycache__
+
+# spcial dir
+cache
+
+
+# images
+tests/compare_result/**
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+#
+*.html
+*.xlsx
+*.pdf
+
+*.md
+!README.md
+!README_en.md
