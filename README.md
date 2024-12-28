@@ -69,6 +69,12 @@ python app.py
 ```
 windows下如果需要.bat启动 替换其中的python.exe 环境路径
 
+## 相关博客
+
+1. [OCR实践—PaddleOCR](https://blog.csdn.net/csy1021/article/details/144518451?spm=1001.2014.3001.5502)
+2. [OCR实践-Table-Transformer](https://blog.csdn.net/csy1021/article/details/144742974?spm=1001.2014.3001.5502)
+3. [OCR实践-问卷表格统计](https://blog.csdn.net/csy1021/article/details/144777615?spm=1001.2014.3001.5501)
+
 ## 反馈与沟通
 
 希望我们的代码能对你有所帮助，如有问题 欢迎提交issue
