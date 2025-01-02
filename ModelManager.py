@@ -54,6 +54,7 @@ class ModelManager:
             print("Loading Table Structure Split Model...")
             ModelManager._table_structure_split_model = TableTransformerForObjectDetection.from_pretrained(
                 "microsoft/table-transformer-structure-recognition-v1.1-all",
+                # 'hf_models/models--microsoft--table-transformer-structure-recognition-v1.1-all/snapshots/7587a7ef111d9dcbf8ac695f1376ab7014340a0c', # for local model
                 cache_dir='./hf_models',  # debug path ./hf_models
                 proxies={'http': "http://127.0.0.1:7890",
                          'https': "http://127.0.0.1:7890"},
