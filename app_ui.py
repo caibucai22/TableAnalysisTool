@@ -36,6 +36,7 @@ class ImageProcessingApp(QWidget):
         # 创建按钮
         self.open_file_button = QPushButton("打开图像文件", self)
         self.open_folder_button = QPushButton("打开图像文件夹", self)
+        self.clear_queue_button = QPushButton("清空图像队列", self)
         self.process_button = QPushButton("开始处理", self)
 
         self.show_progress_label = QLabel("当前进度: 0/0")
@@ -62,6 +63,7 @@ class ImageProcessingApp(QWidget):
         # 连接信号与槽
         self.open_file_button.clicked.connect(self.open_file)
         self.open_folder_button.clicked.connect(self.open_folder)
+        self.clear_queue_button.clicked.connect(self.clear_queue)
         self.process_button.clicked.connect(self.process_images_v2)
 
         # 设置布局
@@ -69,6 +71,7 @@ class ImageProcessingApp(QWidget):
         hbox.addStretch()
         hbox.addWidget(self.open_file_button)
         hbox.addWidget(self.open_folder_button)
+        hbox.addWidget(self.clear_queue_button)
         hbox.addWidget(self.process_button)
         hbox.addStretch()
 
@@ -126,6 +129,20 @@ class ImageProcessingApp(QWidget):
                 f"当前进度: 0/{len(self.images_need_process)}")
         else:
             QMessageBox.information(self, "error", "文件夹打开失败")
+
+    def clear_queue(self):
+        if(len(self.images_need_process) == 0):
+            QMessageBox.information(self,"info","当前图像队列为空")
+            return
+        self.images_need_process.clear()
+        self.show_progress_label.setText(
+            "当前进度: 0/0")
+        self.show_label.setText('图像状态')
+        self.image_label.setPixmap(self.scale_image(
+            # QPixmap.fromImage(QImage('./table.jpg'))))
+            QPixmap.fromImage(QImage('./resources/home_screen.png'))))
+        QMessageBox.information(
+            self, "info", '待处理图像队列已清空，请重新选取图像')
 
     def show_image(self, image_pixmap: QPixmap, info=True):
         # self.image_label.setPixmap(image_pixmap)
