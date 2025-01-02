@@ -14,6 +14,7 @@ import torch
 from paddle import device
 from PIL import Image, ImageDraw, ImageFont
 import cv2
+import numpy as np
 from ModelManager import ModelManager
 from ScoreEvaluation import ScoreEvaluation
 from Settings import *
@@ -76,7 +77,7 @@ class TableProcessModel:
 
     @timeit_decorator(enable_print=False)
     def load_image(self):
-        self.cur_image = Image.open(self.image_path).convert("RGB") #RGB
+        self.cur_image = Image.open(self.image_path).convert("RGB")  # RGB
         self.cur_image_dir = os.path.dirname(self.image_path)
         self.cur_image_name = os.path.basename(self.image_path).split('.')[0]
 
@@ -100,7 +101,12 @@ class TableProcessModel:
         # result = self.table_locate_model(self.cur_image) # 使用的是cv2 读取 这里是PIL Image 需要转换
         # result = self.table_locate_model(
         #     cv2.cvtColor(np.asarray(self.cur_image), cv2.COLOR_RGB2BGR)) # rgb2bgr
-        result = self.table_locate_model(cv2.imread(self.image_path)) # bgr
+        # support ch path ch image name
+        img = cv2.imdecode(np.fromfile(
+            self.image_path, dtype=np.uint8), cv2.IMREAD_COLOR)
+        if img is None:
+            raise ValueError(f"无法读取图片：{img_path}")
+        result = self.table_locate_model(img)  # bgr
         # pillow image -> cv2 和 直接 cv2 检测结果有差距很大
 
         os.makedirs(self.each_image_mid_dir, exist_ok=True)
@@ -109,8 +115,9 @@ class TableProcessModel:
                 roi_img = region['img']
                 if CACHE:
                     img_path = os.path.join(self.each_image_mid_dir,
-                                        '{}_{}.jpg'.format(self.cur_image_name, "located_table"))
-                    cv2.imwrite(img_path, roi_img)
+                                            '{}_{}.jpg'.format(self.cur_image_name, "located_table"))
+                    # cv2.imwrite(img_path, roi_img)
+                    cv2.imencode('.jpg', roi_img)[1].tofile(img_path)
                 self.locate_table_bbox = region['bbox']
                 return roi_img
                 # break
@@ -237,12 +244,13 @@ class TableProcessModel:
 
     @timeit_decorator(enable_print=False)
     def run_parse_table(self):
-        table_image = self.infer_locate_table() # bgr
+        table_image = self.infer_locate_table()  # bgr
         if len(self.locate_table_bbox) == 0:
             raise Exception("定位表格失败")
 
         # table_image = self.cur_image.crop(self.locate_table_bbox) # RGB
-        table_image = Image.fromarray(cv2.cvtColor(table_image,cv2.COLOR_BGR2RGB))
+        table_image = Image.fromarray(
+            cv2.cvtColor(table_image, cv2.COLOR_BGR2RGB))
 
         # table_image = Image.open(
         #     self.each_image_mid_dir + '/' + '{}_{}.jpg'.format(self.cur_image_name, "located_table")).convert("RGB")
@@ -258,10 +266,8 @@ class TableProcessModel:
         # visualize first for debug
         if CACHE:
             self.draw_boxs(table_image.copy(), cut_cell=False)
-        
-        self.setup_score_eval(table_image)
 
-        
+        self.setup_score_eval(table_image)
 
     def run(self, next_image_path):
         try:
@@ -270,7 +276,7 @@ class TableProcessModel:
             self.load_image()
             self.initialize_cache_dir()
             self.run_parse_table()
-            
+
             self.score_eval.eval_score()
             self.score_eval.to_xlsx()
         except Exception as e:
@@ -296,7 +302,6 @@ if __name__ == "__main__":
     t_single_start = time.time()
     table_process.run(table_img_path)
     print('single test elapsed time ', time.time() - t_single_start)
-
 
     # multi_test ~3s
     # n = len(table_img_path_list)
