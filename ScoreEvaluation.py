@@ -14,6 +14,8 @@ import cv2
 import numpy as np
 import pandas as pd
 import datetime
+import os
+from Settings import *
 
 
 class ScoreEvaluation():
@@ -208,8 +210,18 @@ class ScoreEvaluation():
                                             "总分": [y for _, y in self.score_history]})
         cur_time = datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S")
 
-        scores_collect_xlsx.to_excel(
-            f'socres_collected_{cur_time}.xlsx', index=False)
+        if SAVE_TO_USER_HOME:
+            # 构建保存路径并解析用户主目录
+            save_path = os.path.expanduser('~/Documents/scores_collected')
+            directory = os.path.join(
+                save_path, f"scores_collected_{cur_time}.xlsx")
+            # 确保目录存在
+            os.makedirs(os.path.dirname(directory), exist_ok=True)
+            # 保存为 Excel 文件
+            scores_collect_xlsx.to_excel(directory, index=False)
+        else:
+            scores_collect_xlsx.to_excel(
+                f'socres_collected_{cur_time}.xlsx', index=False)
 
     def load_next(self, image: Image.Image, cells, image_name, save_dir,
                   n_row, n_col, score_col_start_idx, score_col_end_idx

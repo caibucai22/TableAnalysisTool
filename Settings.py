@@ -14,6 +14,7 @@ import torch
 # system
 CACHE = True
 ENABLE_CUT_CELLS = False
+SAVE_TO_USER_HOME = True
 
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
