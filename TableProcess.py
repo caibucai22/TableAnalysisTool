@@ -137,7 +137,7 @@ class TableProcessModel:
         with torch.no_grad():
             outputs = self.table_structure_split_model(**encoding)
         results = self.table_structure_feature_extractor_model.post_process_object_detection(
-            outputs, threshold=0.6, target_sizes=target_sizes)[0]
+            outputs, threshold=0.85, target_sizes=target_sizes)[0] # fix threshold=0.85 hyper-parameters
 
         self.table_split_result.update(results)
         del encoding
@@ -150,6 +150,7 @@ class TableProcessModel:
         '''
         self.cols_box_list = [self.table_split_result['boxes'][i].tolist() for i in range(len(
             self.table_split_result['boxes'])) if self.table_split_result['labels'][i].item() == 1]
+        # TODO cols_nms
         self.rows_box_list = [self.table_split_result['boxes'][i].tolist() for i in range(len(
             self.table_split_result['boxes'])) if self.table_split_result['labels'][i].item() == 2]
 
@@ -289,7 +290,7 @@ class TableProcessModel:
 
 
 if __name__ == "__main__":
-    table_img_path = './test_images/20250103112746.jpg'
+    table_img_path = 'C:/Users/001/Pictures/ocr/1723/20250103172317.jpg'
     image_dir = './test_images'
     table_img_path_list = [image_dir + '/' + imgname for imgname in os.listdir(image_dir) if
                            os.path.splitext(imgname)[-1] in ['.jpg']]
