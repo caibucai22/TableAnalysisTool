@@ -39,7 +39,19 @@ class ScoreEvaluation():
         return top5_index[0] == 0
 
     @staticmethod
-    def recover_score_list(part_list: list, n: int, line_confidence: list,**kwargs):
+    def recover_score_list(part_list: list, n: int, line_confidence: list, **kwargs):
+        def direct_parse(idx, num):
+            score_list_ = []
+            if (idx == 0 and num == 4) or (idx == 1 and num == 3) or (idx == 2 and num == 2) or (idx == 3 and num == 1):
+                score_list_ = [num for num in range(4, 0, -1)]
+            elif (idx == 0 and num == 1) or (idx == 1 and num == 2) or (idx == 2 and num == 3) or (idx == 3 and num == 4):
+                score_list_ = [num for num in range(1, 4+1)]
+            print('row_{}'.format(kwargs.get('row_i', 'i')),
+                  'recover score list, ', score_list_)
+            return score_list_
+        if len(part_list) == 1:
+            return direct_parse(part_list[0][0], part_list[0][1])
+
         score_list = [-1]*n
         increased = (part_list[0][1] - part_list[1][1]) < 0
         (idx1, num1) = part_list[0]
@@ -65,7 +77,8 @@ class ScoreEvaluation():
             for i in range(idx2, n):
                 score_list[i] = num2_start
                 num2_start = num2_start + 1 if increased else num2_start - 1
-            print('row_{}'.format(kwargs.get('row_i','i')) ,'recover score list, ', score_list)
+            print('row_{}'.format(kwargs.get('row_i', 'i')),
+                  'recover score list, ', score_list)
         except Exception as e:
             print('run error, first recover score list failed, --->', e, 'retry')
             # based on confidence
@@ -79,10 +92,11 @@ class ScoreEvaluation():
                 score_list = [num for num in range(4, 0, -1)]
             elif (idx1 == 0 and num1 == 1) or (idx1 == 1 and num1 == 2) or (idx1 == 2 and num1 == 3) or (idx1 == 3 and num1 == 4):
                 score_list = [num for num in range(1, 4+1)]
-            print('row_{}'.format(kwargs.get('row_i','i')) ,'recover score list, ', score_list)
+            print('row_{}'.format(kwargs.get('row_i', 'i')),
+                  'recover score list, ', score_list)
         return score_list
 
-    def eval_line_score(self, line_score_boxs,**kwargs):
+    def eval_line_score(self, line_score_boxs, **kwargs):
         n_ = len(line_score_boxs)
         line_rec_ret = []
         line_rec_confidence = []
@@ -93,6 +107,7 @@ class ScoreEvaluation():
             line_bingo_state[i] = is_bingo
             if line_bingo_state[i]:
                 line_rec_ret.append('bingo')
+                line_rec_confidence.append(0)
                 continue
 
             ret = self.text_rec_model.ocr(cv2.cvtColor(
@@ -109,6 +124,7 @@ class ScoreEvaluation():
         if not line_bingo_state[bingo_idx]:  # if invalid
             bingo_idx = line_rec_ret.index(
                 'bingo', bingo_idx+1)  # second bingo
+        # TODO no bingo fix
 
         increased = True
         judge_increased_list = []  # record first number idx and first number
@@ -135,15 +151,16 @@ class ScoreEvaluation():
                     judge_increased_list.append((i, 1))
                     if len(judge_increased_list) == 2:
                         break
-            assert len(judge_increased_list) == 2
-            increased = (judge_increased_list[0]
-                         [1]-judge_increased_list[1][0]) < 0
+            # TODO only 1 number
+            assert len(judge_increased_list) >= 1
+            # increased = (judge_increased_list[0]
+            #              [1]-judge_increased_list[1][0]) < 0
             # print('parse increased success')
 
         # bingo_number = -1
         # recover choice socres list []
         scores_list = ScoreEvaluation.recover_score_list(
-            judge_increased_list, n_, line_rec_confidence,**kwargs)
+            judge_increased_list, n_, line_rec_confidence, **kwargs)
 
         # if bingo_idx == len(line_rec_ret)-1:
         #     if increased:
@@ -172,7 +189,7 @@ class ScoreEvaluation():
                 continue
             score_boxs = self.cells[row_i*self.n_col +
                                     self.score_col_start_idx:row_i*self.n_col+self.score_col_end_idx+1]
-            line_score = self.eval_line_score(score_boxs,row_i=row_i)
+            line_score = self.eval_line_score(score_boxs, row_i=row_i)
             self.row_scores.append(line_score)
         self.score_history.append(
             (f'{self.cur_image_name}_score.xlsx', sum(self.row_scores)))
