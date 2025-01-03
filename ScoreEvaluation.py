@@ -39,7 +39,7 @@ class ScoreEvaluation():
         return top5_index[0] == 0
 
     @staticmethod
-    def recover_score_list(part_list: list, n: int):
+    def recover_score_list(part_list: list, n: int, line_confidence: list,**kwargs):
         score_list = [-1]*n
         increased = (part_list[0][1] - part_list[1][1]) < 0
         (idx1, num1) = part_list[0]
@@ -65,12 +65,24 @@ class ScoreEvaluation():
             for i in range(idx2, n):
                 score_list[i] = num2_start
                 num2_start = num2_start + 1 if increased else num2_start - 1
-            print('recover score list, ', score_list)
-            return score_list
+            print('row_{}'.format(kwargs.get('row_i','i')) ,'recover score list, ', score_list)
         except Exception as e:
-            print('run error, --->', e)
+            print('run error, first recover score list failed, --->', e, 'retry')
+            # based on confidence
+            idx1_conf = line_confidence[idx1]
+            idx2_conf = line_confidence[idx2]
+            if idx2_conf > idx1_conf:
+                idx1 = idx2
+                num1 = num2
 
-    def eval_line_score(self, line_score_boxs):
+            if (idx1 == 0 and num1 == 4) or (idx1 == 1 and num1 == 3) or (idx1 == 2 and num1 == 2) or (idx1 == 3 and num1 == 4):
+                score_list = [num for num in range(4, 0, -1)]
+            elif (idx1 == 0 and num1 == 1) or (idx1 == 1 and num1 == 2) or (idx1 == 2 and num1 == 3) or (idx1 == 3 and num1 == 4):
+                score_list = [num for num in range(1, 4+1)]
+            print('row_{}'.format(kwargs.get('row_i','i')) ,'recover score list, ', score_list)
+        return score_list
+
+    def eval_line_score(self, line_score_boxs,**kwargs):
         n_ = len(line_score_boxs)
         line_rec_ret = []
         line_rec_confidence = []
@@ -84,7 +96,7 @@ class ScoreEvaluation():
                 continue
 
             ret = self.text_rec_model.ocr(cv2.cvtColor(
-                np.asarray(score_box), cv2.COLOR_RGB2BGR))
+                np.asarray(score_box), cv2.COLOR_RGB2BGR), cls=False)
             if ret[0] is not None:
                 line_rec_ret.append(ret[0][0][1][0])
                 line_rec_confidence.append(ret[0][0][1][1])
@@ -94,8 +106,9 @@ class ScoreEvaluation():
                 line_rec_confidence.append(0)
 
         bingo_idx = line_rec_ret.index('bingo')  # first bingo
-        if not line_bingo_state[bingo_idx]: # if invalid
-            bingo_idx = line_rec_ret.index('bingo', bingo_idx+1) # second bingo
+        if not line_bingo_state[bingo_idx]:  # if invalid
+            bingo_idx = line_rec_ret.index(
+                'bingo', bingo_idx+1)  # second bingo
 
         increased = True
         judge_increased_list = []  # record first number idx and first number
@@ -125,12 +138,12 @@ class ScoreEvaluation():
             assert len(judge_increased_list) == 2
             increased = (judge_increased_list[0]
                          [1]-judge_increased_list[1][0]) < 0
-            print('parse increased success')
+            # print('parse increased success')
 
         # bingo_number = -1
         # recover choice socres list []
         scores_list = ScoreEvaluation.recover_score_list(
-            judge_increased_list, n_)
+            judge_increased_list, n_, line_rec_confidence,**kwargs)
 
         # if bingo_idx == len(line_rec_ret)-1:
         #     if increased:
@@ -149,7 +162,7 @@ class ScoreEvaluation():
         #         bingo_number = int(line_rec_ret[bingo_idx-1])-1
         # return bingo_number
         # return line_rec_confidence
-        
+
         # if recover_score_list error, error NoneType' object is not subscriptable
         return scores_list[bingo_idx]
 
@@ -159,7 +172,7 @@ class ScoreEvaluation():
                 continue
             score_boxs = self.cells[row_i*self.n_col +
                                     self.score_col_start_idx:row_i*self.n_col+self.score_col_end_idx+1]
-            line_score = self.eval_line_score(score_boxs)
+            line_score = self.eval_line_score(score_boxs,row_i=row_i)
             self.row_scores.append(line_score)
         self.score_history.append(
             (f'{self.cur_image_name}_score.xlsx', sum(self.row_scores)))

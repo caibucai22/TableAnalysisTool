@@ -289,7 +289,7 @@ class TableProcessModel:
 
 
 if __name__ == "__main__":
-    table_img_path = './test_images/20250103112754.jpg'
+    table_img_path = './test_images/20250103112738.jpg'
     image_dir = './test_images'
     table_img_path_list = [image_dir + '/' + imgname for imgname in os.listdir(image_dir) if
                            os.path.splitext(imgname)[-1] in ['.jpg']]
