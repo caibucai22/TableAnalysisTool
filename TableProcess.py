@@ -265,7 +265,7 @@ class TableProcessModel:
         self.parse_table_split_result()
         # visualize first for debug
         if CACHE:
-            self.draw_boxs(table_image.copy(), cut_cell=False)
+            self.draw_boxs(table_image.copy(), cut_cell=ENABLE_CUT_CELLS)
 
         self.setup_score_eval(table_image)
 
@@ -289,7 +289,7 @@ class TableProcessModel:
 
 
 if __name__ == "__main__":
-    table_img_path = './test_images/table1.jpg'
+    table_img_path = './test_images/20250103112754.jpg'
     image_dir = './test_images'
     table_img_path_list = [image_dir + '/' + imgname for imgname in os.listdir(image_dir) if
                            os.path.splitext(imgname)[-1] in ['.jpg']]

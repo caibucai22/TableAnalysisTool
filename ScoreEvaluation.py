@@ -38,6 +38,38 @@ class ScoreEvaluation():
 
         return top5_index[0] == 0
 
+    @staticmethod
+    def recover_score_list(part_list: list, n: int):
+        score_list = [-1]*n
+        increased = (part_list[0][1] - part_list[1][1]) < 0
+        (idx1, num1) = part_list[0]
+        (idx2, num2) = part_list[1]
+        score_list[idx1] = num1
+        score_list[idx2] = num2
+        try:
+            num1_start = num1
+            num1_start2 = num1
+            num2_start = num2
+            # 填充第一个区间
+            for i in range(idx1, -1, -1):
+                score_list[i] = num1_start
+                num1_start = num1_start - 1 if increased else num1_start + 1
+
+            # 填充中间区间
+            for i in range(idx1, idx2 + 1):
+                score_list[i] = num1_start2
+                num1_start2 = num1_start2 + 1 if increased else num1_start2 - 1
+            assert score_list[idx2] == num2  # 检查边界值是否一致
+
+            # 填充最后一个区间
+            for i in range(idx2, n):
+                score_list[i] = num2_start
+                num2_start = num2_start + 1 if increased else num2_start - 1
+            print('recover score list, ', score_list)
+            return score_list
+        except Exception as e:
+            print('run error, --->', e)
+
     def eval_line_score(self, line_score_boxs):
         n_ = len(line_score_boxs)
         line_rec_ret = []
@@ -53,14 +85,20 @@ class ScoreEvaluation():
 
             ret = self.text_rec_model.ocr(cv2.cvtColor(
                 np.asarray(score_box), cv2.COLOR_RGB2BGR))
-            line_rec_ret.append(ret[0][0][1][0] if ret[0]
-                                is not None else 'bingo')
-            line_rec_confidence.append(
-                ret[0][0][1][1] if ret[0] is not None else 0)
+            if ret[0] is not None:
+                line_rec_ret.append(ret[0][0][1][0])
+                line_rec_confidence.append(ret[0][0][1][1])
+            else:  # no-recon also thinked as bingo
+                line_rec_ret.append('bingo')
+                line_bingo_state[i] = False
+                line_rec_confidence.append(0)
 
         bingo_idx = line_rec_ret.index('bingo')  # first bingo
+        if not line_bingo_state[bingo_idx]: # if invalid
+            bingo_idx = line_rec_ret.index('bingo', bingo_idx+1) # second bingo
 
         increased = True
+        judge_increased_list = []  # record first number idx and first number
         try:
             if bingo_idx == len(line_rec_ret)-1 and bingo_idx-2 >= 0:
                 increased = int(line_rec_ret[bingo_idx-2]
@@ -72,34 +110,48 @@ class ScoreEvaluation():
                 increased = int(line_rec_ret[bingo_idx-1]
                                 ) < int(line_rec_ret[bingo_idx+1])
         except Exception as e:
-            print('run error, first judge increased failed', e)
+            print('run error, first judge increased failed ! --->', e)
+        finally:
             # second method
-            judge_increased_list = []
             for i, cell_ret in enumerate(line_rec_ret):
                 if str.isdigit(cell_ret):
-                    judge_increased_list.append(int(cell_ret))
+                    judge_increased_list.append((i, int(cell_ret)))
                     if len(judge_increased_list) == 2:
                         break
-            increased = (judge_increased_list[0]-judge_increased_list[1]) < 0
+                elif cell_ret == '一':  # fix 1 recon because of rotation
+                    judge_increased_list.append((i, 1))
+                    if len(judge_increased_list) == 2:
+                        break
+            assert len(judge_increased_list) == 2
+            increased = (judge_increased_list[0]
+                         [1]-judge_increased_list[1][0]) < 0
+            print('parse increased success')
 
-        bingo_number = -1
-        if bingo_idx == len(line_rec_ret)-1:
-            if increased:
-                bingo_number = int(line_rec_ret[bingo_idx-1])+1
-            else:
-                bingo_number = int(line_rec_ret[bingo_idx-1])-1
-        elif bingo_idx == 0:
-            if increased:
-                bingo_number = int(line_rec_ret[bingo_idx+1])-1
-            else:
-                bingo_number = int(line_rec_ret[bingo_idx+1])+1
-        else:
-            if increased:
-                bingo_number = int(line_rec_ret[bingo_idx-1])+1
-            else:
-                bingo_number = int(line_rec_ret[bingo_idx-1])-1
-        return bingo_number
+        # bingo_number = -1
+        # recover choice socres list []
+        scores_list = ScoreEvaluation.recover_score_list(
+            judge_increased_list, n_)
+
+        # if bingo_idx == len(line_rec_ret)-1:
+        #     if increased:
+        #         bingo_number = int(line_rec_ret[bingo_idx-1])+1
+        #     else:
+        #         bingo_number = int(line_rec_ret[bingo_idx-1])-1
+        # elif bingo_idx == 0:
+        #     if increased:
+        #         bingo_number = int(line_rec_ret[bingo_idx+1])-1
+        #     else:
+        #         bingo_number = int(line_rec_ret[bingo_idx+1])+1
+        # else:
+        #     if increased:
+        #         bingo_number = int(line_rec_ret[bingo_idx-1])+1
+        #     else:
+        #         bingo_number = int(line_rec_ret[bingo_idx-1])-1
+        # return bingo_number
         # return line_rec_confidence
+        
+        # if recover_score_list error, error NoneType' object is not subscriptable
+        return scores_list[bingo_idx]
 
     def eval_score(self):
         for row_i in range(self.n_row):
@@ -123,10 +175,11 @@ class ScoreEvaluation():
 
     def score_history_to_xlsx(self):
         scores_collect_xlsx = pd.DataFrame({'文件名': [x for x, _ in self.score_history],
-                                       "总分": [y for _, y in self.score_history]})
+                                            "总分": [y for _, y in self.score_history]})
         cur_time = datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S")
 
-        scores_collect_xlsx.to_excel(f'socres_collected_{cur_time}.xlsx',index=False)
+        scores_collect_xlsx.to_excel(
+            f'socres_collected_{cur_time}.xlsx', index=False)
 
     def load_next(self, image: Image.Image, cells, image_name, save_dir,
                   n_row, n_col, score_col_start_idx, score_col_end_idx
