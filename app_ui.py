@@ -133,7 +133,7 @@ class ImageProcessingApp(QWidget):
     def clear_queue(self):
         if(len(self.images_need_process) == 0):
             QMessageBox.information(self,"info","当前图像队列为空")
-            return
+            # return # continue execute
         self.images_need_process.clear()
         self.show_progress_label.setText(
             "当前进度: 0/0")

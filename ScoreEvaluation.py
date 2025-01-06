@@ -52,7 +52,11 @@ class ScoreEvaluation():
                   'recover score list, ', score_list_)
             return score_list_
         if len(part_list) == 1:
-            return direct_parse(part_list[0][0], part_list[0][1])
+            idx = part_list[0][0]
+            num = part_list[0][1]
+            if num not in [1, 2, 3, 4]:  # fix error reco ocr
+                num = int(str(num)[0])
+            return direct_parse(idx, num)
 
         score_list = [-1]*n
         increased = (part_list[0][1] - part_list[1][1]) < 0
@@ -103,6 +107,7 @@ class ScoreEvaluation():
         line_rec_ret = []
         line_rec_confidence = []
         line_bingo_state = [False] * n_
+        line_success = True
         for i, box in enumerate(line_score_boxs):
             score_box = self.cur_image.crop(box)
             is_bingo = self.judge_bingo(score_box)
@@ -161,8 +166,12 @@ class ScoreEvaluation():
 
         # bingo_number = -1
         # recover choice socres list []
-        scores_list = ScoreEvaluation.recover_score_list(
-            judge_increased_list, n_, line_rec_confidence, **kwargs)
+        try:
+            scores_list = ScoreEvaluation.recover_score_list(
+                judge_increased_list, n_, line_rec_confidence, **kwargs)
+        except Exception as e:
+            print("recover score list failed, prepare to skip current line, --->", e)
+            line_success = False
 
         # if bingo_idx == len(line_rec_ret)-1:
         #     if increased:
@@ -183,31 +192,57 @@ class ScoreEvaluation():
         # return line_rec_confidence
 
         # if recover_score_list error, error NoneType' object is not subscriptable
-        return scores_list[bingo_idx]
+        if line_success:
+            return line_success, scores_list[bingo_idx]
+        return line_success, 0  # line parse failed return 0
 
-    def eval_score(self):
+    def eval_score(self, process_failure=False):
+        if process_failure:
+            self.score_history.append(
+                (f'{self.cur_image_name}_score.xlsx', 0, False,'all'))
+            return
+        zero_indices = []
         for row_i in range(self.n_row):
             if row_i == 0:
                 continue
             score_boxs = self.cells[row_i*self.n_col +
                                     self.score_col_start_idx:row_i*self.n_col+self.score_col_end_idx+1]
-            line_score = self.eval_line_score(score_boxs, row_i=row_i)
-            self.row_scores.append(line_score)
-        self.score_history.append(
-            (f'{self.cur_image_name}_score.xlsx', sum(self.row_scores)))
+            try:
+                line_success, line_score = self.eval_line_score(
+                    score_boxs, row_i=row_i)
+                self.row_scores.append((row_i, line_score))
+            except:
+                print("recording no. and skipping... ")
+                zero_indices.append(row_i)
+                self.row_scores.append((row_i, 0))
 
-    def to_xlsx(self, to_stdout=False):
+        print(f'total {len(zero_indices)} lines failed -->', zero_indices)
+        self.score_history.append(
+            (f'{self.cur_image_name}_score.xlsx', sum(score for no, score in self.row_scores), True if len(zero_indices) == 0 else False,
+             ','.join(map(str,zero_indices))))
+
+    def to_xlsx(self, process_failure=False, to_stdout=False):
+        if process_failure:
+            xlsx = pd.DataFrame(
+                {'no': [row_i+1 for row_i in range(self.n_row)],
+                 'score': [0 for i in range(self.n_row)]})
+            xlsx.to_excel(
+                f'{self.save_dir}/{self.cur_image_name}_score.xlsx', index=False)
+            return
         if to_stdout:
             for row_i, row_score in enumerate(self.row_scores):
                 print(f'row {row_i+2} ---> score: {row_score}')
         xlsx = pd.DataFrame(
-            {'no': range(1, len(self.row_scores)+1), 'score': self.row_scores})
+            {'no': [x for x, _ in self.row_scores],
+             'score': [y for _, y in self.row_scores]})
         xlsx.to_excel(
             f'{self.save_dir}/{self.cur_image_name}_score.xlsx', index=False)
 
     def score_history_to_xlsx(self):
-        scores_collect_xlsx = pd.DataFrame({'文件名': [x for x, _ in self.score_history],
-                                            "总分": [y for _, y in self.score_history]})
+        scores_collect_xlsx = pd.DataFrame({'文件名': [x for x, _, _,_ in self.score_history],
+                                            "总分": [y for _, y, _,_ in self.score_history],
+                                            "状态": ["success" if z else "uncompleted" for _, _, z,_ in self.score_history],
+                                            '未识别':[ unrecon for _, _, _,unrecon in self.score_history]})
         cur_time = datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S")
 
         if SAVE_TO_USER_HOME:
