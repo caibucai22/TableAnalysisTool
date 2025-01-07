@@ -5,13 +5,19 @@ class BaseException(Exception):
     # def __str__(self) -> str:
     #     return f"{self.message}"
 
+
+class LoadImageError(Exception):
+    pass
+
+
 class TableStructreError(BaseException):
-    '''
+    """
     定位表格失败
     表格特征编码失败
     表格切分失败
     structure donot matched
-    '''
+    """
+
     pass
 
 
@@ -20,23 +26,29 @@ class BingoError(BaseException):
 
 
 class LineScoreError(BaseException):
-    '''
+    """
     score list recover
     skipping
-    '''
+    """
+
     pass
 
 
 class OrderJudgeError(BaseException):
     pass
 
+
 class OcrError(BaseException):
-    '''
-    '''
+    """ """
+
     pass
 
 
+class OnnxRuntimeError(Exception):
+    pass
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # raise BingoError("no bingo")
     # raise BingoError("all bingos")
+    raise OnnxRuntimeError("model do not exists")
