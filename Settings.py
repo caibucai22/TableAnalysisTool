@@ -44,9 +44,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 IMAGE_EXTS = [".jpg", ".bmp", ".png"]
 
 # support cuda
-# USE_DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
+USE_DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 # if only cpu
-USE_DEVICE = "cpu"
+# USE_DEVICE = "cpu"
 
 # font
 FONT_PATH = "./resources/simfang.ttf"
