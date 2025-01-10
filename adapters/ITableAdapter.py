@@ -14,5 +14,5 @@ from abc import ABC, abstractmethod
 class ITableAdapter(ABC):
 
     @abstractmethod
-    def adapt(self, model_output):
+    def adapt(self, model_output, **kwargs):
         pass
