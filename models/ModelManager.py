@@ -1,12 +1,10 @@
 from transformers import (
-    AutoImageProcessor,
-    AutoModel,
     TableTransformerForObjectDetection,
     DetrFeatureExtractor,
 )
 from paddleocr import PPStructure, PaddleOCR
-from YoloClsInfer import Yolov8_cls_PIL
-from WiredTableRecognition import WiredTableStructureModel
+from models.YoloClsInfer import Yolov8_cls_PIL
+from models.WiredTableRecognition import WiredTableStructureModel
 from Settings import *
 from Logger import get_logger
 import logging
@@ -23,7 +21,7 @@ class ModelManager:
     _table_wired_structure_split_model = None
 
     @staticmethod
-    def get_wired_table_structure_split_model():
+    def get_table_wired_structure_split_model():
         if ModelManager._table_wired_structure_split_model is None:
             logger.info("loading wired table structure split model")
             ModelManager._table_wired_structure_split_model = WiredTableStructureModel()
@@ -32,7 +30,7 @@ class ModelManager:
     @staticmethod
     def get_bingo_cls_model():
         if ModelManager._bingo_cls_model is None:
-            print("Loading Bingo Judge Model...")
+            logger.info("Loading Bingo Judge Model...")
             ModelManager._bingo_cls_model = Yolov8_cls_PIL(
                 model_path=BINGO_CLS_MODEL_PATH
             )
@@ -41,7 +39,7 @@ class ModelManager:
     @staticmethod
     def get_text_rec_model():
         if ModelManager._text_rec_model is None:
-            print("Loading Text Rec Model...")
+            logger.info("Loading Text Rec Model...")
             ModelManager._text_rec_model = PaddleOCR(
                 sho_log=False,
                 det_model_dir=PADDLE_OCR_DET_MODEL_DIR,
@@ -53,7 +51,7 @@ class ModelManager:
     @staticmethod
     def get_table_locate_model():
         if ModelManager._table_locate_model is None:
-            print("Loading Table Locate Model...")
+            logger.info("Loading Table Locate Model...")
             ModelManager._table_locate_model = PPStructure(
                 show_log=False,
                 table_model_dir=PADDLE_OCR_TABLE_MODEL_DIR,
@@ -64,18 +62,16 @@ class ModelManager:
         return ModelManager._table_locate_model
 
     @staticmethod
-    def get_table_structure_feature_extractor_model():
+    def get_table_structure_feature_extractor_model() -> DetrFeatureExtractor:
         if ModelManager._table_structure_feature_extractor_model is None:
-            print("Loading Table Structure Feature Extractor Model...")
-            ModelManager._table_structure_feature_extractor_model = (
-                DetrFeatureExtractor()
-            )
+            logger.info("Loading Table Structure Feature Extractor Model...")
+            ModelManager._table_structure_feature_extractor_model = DetrFeatureExtractor()
         return ModelManager._table_structure_feature_extractor_model
 
     @staticmethod
     def get_table_structure_split_model():
         if ModelManager._table_structure_split_model is None:
-            print("Loading Table Structure Split Model...")
+            logger.info("Loading Table Structure Split Model...")
             ModelManager._table_structure_split_model = TableTransformerForObjectDetection.from_pretrained(
                 "microsoft/table-transformer-structure-recognition-v1.1-all",
                 # 'hf_models/models--microsoft--table-transformer-structure-recognition-v1.1-all/snapshots/7587a7ef111d9dcbf8ac695f1376ab7014340a0c', # for local model

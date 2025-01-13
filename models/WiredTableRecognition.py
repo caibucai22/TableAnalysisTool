@@ -99,7 +99,7 @@ class OrtInferSession:
 
 class WiredTableStructureModel:
 
-    def __init__(self, table_model_path, version="v2") -> None:
+    def __init__(self, table_model_path=None, version="v2") -> None:
         if version == "v2":
             model_path = (
                 table_model_path
