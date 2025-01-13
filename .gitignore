@@ -31,3 +31,5 @@ cache
 *.md
 !README.md
 !README_en.md
+
+log.txt.*

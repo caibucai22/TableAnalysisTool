@@ -18,7 +18,8 @@ def get_logger(name='TableAnalysisTool', log_file='./log.txt', log_level=logging
     # for logger_name in logger_initialized:
     #     if name.startswith(logger_name):
     #         return logger
-    formatter = logging.Formatter('[%(asctime)s] %(filename)s [line:%(lineno)d] %(levelname)s: %(funcName)s %(message)s',
+    # %(lineno)d
+    formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(filename)s <%(funcName)s> %(message)s',
                                   datefmt="%Y/%m/%d %H:%M:%S")
     if not logger.handlers:
         stream_handler = logging.StreamHandler(stream=sys.stdout)
