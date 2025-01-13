@@ -1,15 +1,17 @@
 from ITableAdapter import ITableAdapter
 from transformers import TableTransformerForObjectDetection
-from Table import TableEntity
+from adapters.Table import TableEntity
 import Utils
+from models.ModelManager import ModelManager
+import torch
 
 
 class TableTransformerAdapter(ITableAdapter):
 
-    def __init__(self, model: TableTransformerForObjectDetection) -> None:
+    def __init__(self, model: TableTransformerForObjectDetection = None) -> None:
         self.model = model
 
-    def adapt(self, model_output: dict,**kwargs) -> TableEntity:
+    def adapt(self, model_output: dict, **kwargs) -> TableEntity:
         """
         {0: 'table', 1: 'table column', 2: 'table row', 3: 'table column header',
         4: 'table projected row header', 5: 'table spanning cell'}
@@ -34,8 +36,8 @@ class TableTransformerAdapter(ITableAdapter):
         )
         cells_box_list = [
             Utils.intersection(row, col)
-            for row in self.rows_box_list
-            for col in self.cols_box_list
+            for row in rows_box_list
+            for col in cols_box_list
         ]
 
         parsed_table = TableEntity(
@@ -44,3 +46,25 @@ class TableTransformerAdapter(ITableAdapter):
             cell_bbox_list=cells_box_list,
         )
         return parsed_table
+
+
+def main():
+    adapter = TableTransformerAdapter()
+    table_structure_feature_extractor_model = ModelManager.get_table_structure_feature_extractor_model()
+    table_structure_split_model = ModelManager.get_table_structure_split_model()
+
+    image_path = "../test_images/cache/table0/table0_located_table.jpg"
+    img = Utils.img_load_by_Image(image_path).convert("RGB")
+    target_sizes = [img.size[::-1]]
+    encoding = table_structure_feature_extractor_model(img, return_tensors="pt")
+    with torch.no_grad():
+        outputs = table_structure_split_model(**encoding)
+    results = table_structure_feature_extractor_model.post_process_object_detection(outputs, threshold=0.85,
+                                                                                    target_sizes=target_sizes
+                                                                                    )[0]
+    parsed_table = adapter.adapt(results)
+    print(parsed_table)
+
+
+if __name__ == "__main__":
+    main()
