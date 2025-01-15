@@ -173,7 +173,7 @@ def img_wirte_by_cv2(img, img_path):
     cv2.imencode(".jpg", img)[1].tofile(img_path)
 
 
-def img_load_by_Image(img: InputType) -> np.ndarray:
+def img_load_by_Image(img: InputType) -> Image.Image:
     if not isinstance(img, InputType.__args__):
         raise LoadImageError(
             f"The img type {type(img)} does not in {InputType.__args__}"
@@ -181,16 +181,17 @@ def img_load_by_Image(img: InputType) -> np.ndarray:
     if isinstance(img, (str, Path)):
         verify_image_exist(img)
         try:
-            img = np.array(Image.open(img))
+            img = Image.open(img)
         except UnidentifiedImageError as e:
             raise LoadImageError(f"cannot identify image file {img}") from e
         return img
 
     if isinstance(img, bytes):
-        img = np.array(Image.open(BytesIO(img)))
+        img = Image.open(BytesIO(img))
         return img
 
     if isinstance(img, np.ndarray):
+        img = Image.fromarray(img)
         return img
 
     raise LoadImageError(f"{type(img)} is not supported!")
@@ -251,3 +252,25 @@ def cvt_two_to_three(img: np.ndarray) -> np.ndarray:
 def verify_image_exist(file_path: Union[str, Path]):
     if not Path(file_path).exists():
         raise LoadImageError(f"{file_path} does not exist.")
+
+
+def intersection(boxA: list, boxB: list):
+    """
+    计算两个 Box 的交集
+    Args:
+        boxA: 第一个 Box，(x1, y1, x2, y2)
+        boxB: 第二个 Box，(x1, y1, x2, y2)
+
+    Returns:
+        如果两个 Box 有交集，返回交集的 Box，否则返回 None
+    """
+
+    # 计算交集的左上角和右下角坐标
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
+
+    # 如果交集的宽度或高度小于等于0，则说明两个 Box 没有交集
+    intersection_area = max(0, xB - xA + 1) * max(0, yB - yA + 1)
+    return [xA, yA, xB, yB] if intersection_area > 0 else None
