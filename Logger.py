@@ -3,6 +3,7 @@ import logging.handlers
 import sys
 import os
 import functools
+from Settings import LOG_PATH
 
 logger_initialized = {}
 logging.basicConfig(level=logging.DEBUG)
@@ -10,7 +11,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 @functools.lru_cache
-def get_logger(name='TableAnalysisTool', log_file='./log.txt', log_level=logging.DEBUG):
+def get_logger(name='TableAnalysisTool', log_file=LOG_PATH, log_level=logging.DEBUG):
     logger = logging.getLogger(name)
 
     if name in logger_initialized:
@@ -30,13 +31,14 @@ def get_logger(name='TableAnalysisTool', log_file='./log.txt', log_level=logging
             log_file_folder = os.path.split(log_file)[0]
             os.makedirs(log_file_folder, exist_ok=True)
             # file_handler = logging.FileHandler(log_file, 'a') # repeat TimedRotatingFileHandler
-            # file_handler.setFormatter(formatter)
-            # logger.addHandler(file_handler)
+            file_handler = logging.handlers.RotatingFileHandler(log_file, 'a') # repeat TimedRotatingFileHandler
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
         # file size control
-        filesize_handler = logging.handlers.TimedRotatingFileHandler(
-            log_file, when='midnight', backupCount=5)
-        filesize_handler.setFormatter(formatter)
-        logger.addHandler(filesize_handler)
+        # filesize_handler = logging.handlers.TimedRotatingFileHandler(
+        #     log_file, when='midnight', backupCount=5)
+        # filesize_handler.setFormatter(formatter)
+        # logger.addHandler(filesize_handler)
 
     logger.setLevel(log_level)
     logger_initialized[name] = logger
