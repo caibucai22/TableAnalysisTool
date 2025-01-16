@@ -14,11 +14,13 @@ import os
 import subprocess
 import platform
 import cv2
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError,ImageDraw,ImageFont
 import numpy as np
 from pathlib import Path
 from Exceptions import *
 from io import BytesIO
+from adapters.Table import TableEntity
+from Settings import *
 
 InputType = Union[str, np.ndarray, bytes, Path]
 
@@ -274,3 +276,76 @@ def intersection(boxA: list, boxB: list):
     # 如果交集的宽度或高度小于等于0，则说明两个 Box 没有交集
     intersection_area = max(0, xB - xA + 1) * max(0, yB - yA + 1)
     return [xA, yA, xB, yB] if intersection_area > 0 else None
+
+
+def draw_table(image: Image, table_data: TableEntity,save_dir, **kwargs):
+    
+    draw_col = kwargs.get("draw_col", False)
+    draw_row = kwargs.get("draw_row", False)
+    draw_cell = kwargs.get("draw_cell", False)
+    cut_cell = kwargs.get("cut_cell", False)
+
+    rows_box_list = table_data.row_bbox_list
+    cols_box_list = table_data.col_bbox_list
+    cells_box_list = table_data.cell_bbox_list
+
+    if draw_col and len(cols_box_list) > 0:
+            col_draw_image = image.copy()
+            for col in cols_box_list:
+                col_draw = ImageDraw.Draw(col_draw_image)
+                col_draw.rectangle(col, outline="red", width=3)
+            col_draw_image.save(save_dir + "/" + "cols.jpg")
+
+    if draw_row and len(rows_box_list) > 0:
+        row_draw_image = image.copy()
+        for row in rows_box_list:
+            row_draw = ImageDraw.Draw(row_draw_image)
+            row_draw.rectangle(row, outline="red", width=3)
+        row_draw_image.save(save_dir + "/" + "rows.jpg")
+
+    if draw_cell and len(cells_box_list) > 0:
+        cell_draw_image = image.copy()
+        for cell in cells_box_list:
+            cell_draw = ImageDraw.Draw(cell_draw_image)
+            cell_draw.rectangle(cell, outline="red", width=3)
+        cell_draw_image.save(save_dir + "/" + "cells.jpg")
+
+    if draw_cell and (len(cells_box_list) > 0):
+        white_background = Image.new(
+            "RGB", (image.width, image.height), (255, 255, 255)
+        )
+        font = ImageFont.truetype(FONT_PATH, size=20)
+        sorted_cell_draw = ImageDraw.Draw(white_background)
+        for i, cell in enumerate(cells_box_list):
+            sorted_cell_draw.rectangle(cell, outline="red", width=3)
+            sorted_cell_draw.text(
+                xy=(
+                    cell[0] + (cell[2] - cell[0]) / 2,
+                    cell[1] + (cell[3] - cell[1]) / 2,
+                ),
+                text=str(i),
+                font=font,
+                fill=(0, 0, 255),
+            )
+            sorted_cell_draw.text(
+                xy=(
+                    cell[0] + (cell[2] - cell[0]) / 2 - 20,
+                    cell[1] + (cell[3] - cell[1]) / 2 - 20,
+                ),
+                text=str(cell[0]) + "_" + str(cell[1]),
+                font=font,
+                fill=(0, 255, 0),
+            )
+
+            white_background.save(save_dir + "/" + "sorted_cells.jpg")
+    if cut_cell and (len(cells_box_list) > 0):
+        print("enable cutting cells")
+        for i, cell in enumerate(cells_box_list):
+            x = i // len(cols_box_list)
+            y = i % len(cols_box_list)
+
+            cell_image = image.crop(cell)
+            cell_image.save(
+                save_dir + "/" + f"cell_{x}_{y}" + ".jpg"
+            )
+        print("cutting cells done")
