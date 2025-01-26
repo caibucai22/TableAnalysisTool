@@ -1,7 +1,8 @@
-from ITableAdapter import ITableAdapter
+from adapters.ITableAdapter import ITableAdapter
 from models.WiredTableRecognition import WiredTableStructureModel
-from Table import TableEntity
+from adapters.Table import TableEntity
 import Utils
+import numpy as np
 
 
 class CycleCenterNetAdapter(ITableAdapter):
@@ -25,9 +26,9 @@ def main():
     adapter = CycleCenterNetAdapter()
     model = WiredTableStructureModel()
 
-    image_path = "../test_images/table1.jpg"
+    image_path = "./test_images/table1.jpg"
     img = Utils.img_load_by_Image(image_path)
-    img = Utils.img_convert_to_bgr(img)
+    img = Utils.img_convert_to_bgr(np.array(img))
     polygons, logits = model(img=img)
 
     parsed_table = adapter.adapt({"sorted_polygons": polygons})

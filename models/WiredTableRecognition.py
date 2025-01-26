@@ -157,7 +157,7 @@ class WiredTableStructureModel:
 def main():
     image_path = "./test_images/table1.jpg"
     img = img_load_by_Image(image_path)
-    img = img_convert_to_bgr(img)
+    img = img_convert_to_bgr(np.array(img))
 
     model = WiredTableStructureModel(WIRED_TABLE_STRUCTURE_MODEL_V2_PATH)
     # single test
@@ -170,7 +170,7 @@ def main():
     image_dir = "C:/Users/001/Pictures/ocr/jpg"
     img_list = [image_dir + "/" + image for image in os.listdir(image_dir)]
     img_inputs = [
-        img_convert_to_bgr(img_load_by_Image(img_input)) for img_input in img_list
+        img_convert_to_bgr(np.array(img_load_by_Image(img_input))) for img_input in img_list
     ]
     now = time.time()
     for img in img_inputs:
