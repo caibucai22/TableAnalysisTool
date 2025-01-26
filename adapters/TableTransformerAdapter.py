@@ -1,4 +1,4 @@
-from ITableAdapter import ITableAdapter
+from adapters.ITableAdapter import ITableAdapter
 from transformers import TableTransformerForObjectDetection
 from adapters.Table import TableEntity
 import Utils
@@ -53,7 +53,7 @@ def main():
     table_structure_feature_extractor_model = ModelManager.get_table_structure_feature_extractor_model()
     table_structure_split_model = ModelManager.get_table_structure_split_model()
 
-    image_path = "../test_images/cache/table0/table0_located_table.jpg"
+    image_path = "C:/Users/001/Pictures/ocr/v2/locate_table_2.jpg"
     img = Utils.img_load_by_Image(image_path).convert("RGB")
     target_sizes = [img.size[::-1]]
     encoding = table_structure_feature_extractor_model(img, return_tensors="pt")
