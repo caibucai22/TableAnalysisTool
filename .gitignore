@@ -1,0 +1,38 @@
+# idea
+.idea
+
+# vscode
+.vscode
+.history
+.VSCodeCounter
+
+__pycache__
+**/__pycache__
+**/cache
+
+# spcial dir
+cache
+
+
+# images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+**/*.pyc
+!test_images/*
+!table.jpg
+!resources/** 
+#
+*.html
+*.xlsx
+*.pdf
+
+*.md
+!README.md
+!README_en.md
+
+log.txt.*
+
+*.egg-info
