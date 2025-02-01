@@ -1,7 +1,7 @@
 from adapters.ITableAdapter import ITableAdapter
 from models.WiredTableRecognition import WiredTableStructureModel
 from adapters.Table import TableEntity
-import Utils
+from tools import Utils
 import numpy as np
 
 
@@ -22,7 +22,7 @@ class CycleCenterNetAdapter(ITableAdapter):
         return adapted_parsed_table
 
 
-def main():
+def test_cycle_center_net_adapter():
     adapter = CycleCenterNetAdapter()
     model = WiredTableStructureModel()
 
@@ -36,4 +36,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test_cycle_center_net_adapter()

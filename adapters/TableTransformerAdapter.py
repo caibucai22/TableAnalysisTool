@@ -1,9 +1,10 @@
 from adapters.ITableAdapter import ITableAdapter
 from transformers import TableTransformerForObjectDetection
 from adapters.Table import TableEntity
-import Utils
+from tools import Utils
 from models.ModelManager import ModelManager
 import torch
+from Settings import *
 
 
 class TableTransformerAdapter(ITableAdapter):
@@ -48,23 +49,31 @@ class TableTransformerAdapter(ITableAdapter):
         return parsed_table
 
 
-def main():
+def test_table_transformer_adapter():
     adapter = TableTransformerAdapter()
-    table_structure_feature_extractor_model = ModelManager.get_table_structure_feature_extractor_model()
+    table_structure_feature_extractor_model = (
+        ModelManager.get_table_structure_feature_extractor_model()
+    )
     table_structure_split_model = ModelManager.get_table_structure_split_model()
 
     image_path = "C:/Users/001/Pictures/ocr/v2/locate_table_2.jpg"
     img = Utils.img_load_by_Image(image_path).convert("RGB")
     target_sizes = [img.size[::-1]]
     encoding = table_structure_feature_extractor_model(img, return_tensors="pt")
+    if (
+        encoding["pixel_values"].device == torch.device("cpu")
+        and USE_DEVICE == "cuda:0"
+    ):
+        encoding["pixel_values"] = encoding["pixel_values"].cuda()
+        encoding["pixel_mask"] = encoding["pixel_mask"].cuda()
     with torch.no_grad():
         outputs = table_structure_split_model(**encoding)
-    results = table_structure_feature_extractor_model.post_process_object_detection(outputs, threshold=0.85,
-                                                                                    target_sizes=target_sizes
-                                                                                    )[0]
+    results = table_structure_feature_extractor_model.post_process_object_detection(
+        outputs, threshold=0.85, target_sizes=target_sizes
+    )[0]
     parsed_table = adapter.adapt(results)
     print(parsed_table)
 
 
 if __name__ == "__main__":
-    main()
+    test_table_transformer_adapter()

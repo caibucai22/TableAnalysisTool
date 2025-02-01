@@ -1,5 +1,5 @@
 import logging
-from Logger import get_logger
+from tools.Logger import get_logger
 
 logger = get_logger("TableEntity", log_level=logging.DEBUG)
 
