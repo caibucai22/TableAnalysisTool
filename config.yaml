@@ -1,0 +1,28 @@
+app_dir:
+  base_output_dir: "E:/my-github-repos/01-my_repos/base_output" # 默认是图像文件所在文件夹
+  sub_cache_dir: "cache" # 缓存文件夹
+  models_dir:
+  log_file_dir:
+  resources_dir:
+    fonts:
+
+app_run:
+  use_device:
+  support_cuda:
+  support_cpu:
+  support_image_exts:
+  enable_cache: true
+  save_to_user_home: false
+  print_line_result: true
+  
+
+app_models:
+  paddle:
+  yolo:
+  tabletransformer:
+  cycle_centernet:
+
+app_debug:
+  cache: true
+  cut_table_cells: true
+  

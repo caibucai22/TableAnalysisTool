@@ -1,0 +1,81 @@
+# for table structure parse
+A4:
+  single_table:
+    type: "wired"
+    cols: 6
+    rows: 21
+    locate_model: "table-transformer"
+    eval_type: "line" # line cell
+    eval:
+      start_col_idx: 2
+      end_col_idx: 5
+      header: ["没有或者很少有","有时有","大部分时间（经常有）","绝大数时间有"]
+      score_type: "1234"
+      exist_reverse: true
+      need_sum: true
+
+A3:
+  left_no_1_table:
+    type: "wired"
+    cols: 5
+    rows: 26
+    locate_model: "table-transformer"
+    eval_type: "line"
+    eval:
+      start_col_idx: 2
+      end_col_idx: 4
+      header: ["不符合","有点符合","完全符合"]
+      score_type: "012"
+      exist_reverse: true
+      need_sum: true
+      
+  right_no_1_table:
+    type: "wired"
+    cols: 5
+    rows: 5
+    locate_model: "table-transformer"
+    eval_type: "line"
+    eval:
+      start_col_idx: 1
+      end_col_idx: 4
+      header: ["否","是(有少许困难)","是(有困难)","是(有很大困难)"]
+      score_type: "_ABC"
+      exist_reverse: false
+      need_sum: false
+  right_no_2_table:
+    type: "wired"
+    cols: 5
+    rows: 5
+    locate_model: "table-transformer"
+    eval_type: "line"
+    eval:
+      start_col_idx: 1
+      end_col_idx: 4
+      header: ["少于1个月","1~5个月","6~11个月","1年以上"]
+      score_type: "1234"
+      exist_reverse: false
+      need_sum: true
+  right_no_3_table:
+    type: "wired"
+    cols: 5
+    rows: 6
+    locate_model: "table-transformer"
+    eval_type: "line"
+    eval:
+      start_col_idx: 2
+      end_col_idx: 4
+      header: ["没有(0)","轻微(1)","非常(2)"]
+      score_type: "012"
+      exist_reverse: false
+      need_sum: true
+  right_no_4_table:
+    type: "wired"
+    cols: 
+    rows:
+    locate_model: "cycle-centernet"
+    eval_type: "cell"
+    eval:
+      gt_names: ["姓名","学籍号"]
+      gt_cells: [[]]
+      gt_cell_idxs: [2,12]
+
