@@ -3,25 +3,25 @@
 @File    ：app.py
 @Author  ：Csy
 @Date    ：2024/1/22 16:58 
-@Bref    : 检测定位图中的表格 返回坐标xyxy
+@Bref    : 检测定位图中的表格 返回坐标xyxy roi_img Image 格式
 @Ref     :
-TODO     :
+TODO     : yololocate 返回 roi_img 为空, 提供bbox 方便后续调整
          :
 """
 import os
 from typing import Union
 from ultralyticsplus import YOLO, render_result
 from ultralytics.engine.results import Boxes, Results
-from models.ModelManager import ModelManager
+from models.ModelManager_v2 import model_manger
 import cv2
 import numpy as np
 from Settings import *
 import logging
-from Logger import get_logger
+from tools.Logger import get_logger
 
 logger = get_logger(__file__, log_level=logging.INFO)
 
-import Utils
+from tools import Utils
 
 
 class PaddleLocate:
@@ -30,7 +30,7 @@ class PaddleLocate:
         """
         返回 表格bbox 和 表格roi图像
         """
-        self.model = ModelManager.get_table_locate_model()
+        self.model = model_manger.get_table_locate_model()
 
     def infer_locate_table(self, img, **kwargs) -> np.ndarray:
         base_image_name = kwargs.get("basename", "img")
@@ -83,10 +83,9 @@ class YoloLocate:
         """
         返回 bbox, 支持多表
         """
-        self.model = YOLO(
-            "E:/my-github-repos/01-my_repos/TableAnalysisTool/hf_models/yolov8m_table_detection.pt"
-        )
+        self.model = model_manger.get_model("yolo_locate")
         # set model parameters
+        self.model.overrides["device"] = 0
         self.model.overrides["conf"] = 0.55  # NMS confidence threshold
         self.model.overrides["iou"] = 0.45  # NMS IoU threshold
         self.model.overrides["agnostic_nms"] = False  # NMS class-agnostic
@@ -102,26 +101,33 @@ class YoloLocate:
 
     def parse(self, model_output: Results):
         cls = model_output[0].boxes.cls.cpu()
-        conf = model_output[0].boxes.conf.cpu()
+        conf = model_output[0].boxes.conf.cpu().numpy()
         names: dict = model_output[0].names
-        boxs = model_output[0].boxes.xyxy.cpu()
+        boxs = model_output[0].boxes.xyxy.cpu().numpy()
         n = boxs.shape[0]
         for i in range(n):
             logger.info(
-                f"no.{i+1} xyxy:{boxs[i]} type:{names[int(cls[i])]},conf:{conf[i]}"
+                f"no.{i+1} xyxy:{boxs[i]} type: {names[int(cls[i])]}, conf:{conf[i]}"
             )
-        return boxs
+            # tensor to float
+        boxs = boxs[conf > 0.5] # filter < 0.5 table
+        logger.info(f"filter {len(np.where(conf>0.5))} tables")
+        roi_imgs = None
+        return boxs, roi_imgs
 
     def infer(self, img: Union[str]):
-        return self.parse(self.infer_(img=img))
+        bboxs, roi_imgs = self.parse(self.infer_(img=img))
+        bboxs = sorted(bboxs, key=lambda x: (x[2] + x[0]) / 2 + (x[3] + x[1]) / 2)
+        return bboxs, roi_imgs
 
 
 def test_yoloLocate():
     model = YoloLocate()
-    img_path = "C:/Users/001/Pictures/ocr/v2/right.jpg"
+    # img_path = "C:/Users/001/Pictures/ocr/v2/right.jpg"
+    img_path = "C:/Users/001/Pictures/ocr/v2/locate_table_1.jpg"
     save_dir, image_name = os.path.split(img_path)
     image_basename, _ = os.path.splitext(image_name)
-    bboxs = model.infer(img=img_path)
+    bboxs, _ = model.infer(img=img_path)
     Utils.draw_locate(img_path, bboxs=bboxs, save_dir=save_dir, cut=True)
 
 
@@ -137,5 +143,6 @@ def test_paddleLocate():
 
 
 if __name__ == "__main__":
-    # test_yoloLocate()
-    test_paddleLocate()
+    test_yoloLocate()
+    # test_paddleLocate()
+    pass
