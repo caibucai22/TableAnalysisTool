@@ -8,16 +8,25 @@
 TODO     :
          :
 """
-import sys
 import time
 
 from PyQt5.QtCore import Qt, QThread, QTimer, QObject, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QFileDialog, QHBoxLayout, QVBoxLayout, QLabel, \
-    QScrollArea, QMessageBox, QSizePolicy
+from PyQt5.QtWidgets import (
+    QApplication,
+    QWidget,
+    QPushButton,
+    QFileDialog,
+    QHBoxLayout,
+    QVBoxLayout,
+    QLabel,
+    QScrollArea,
+    QMessageBox,
+    QSizePolicy,
+)
 from PyQt5.QtGui import QPixmap, QImage, QIcon
 from Settings import *
-from TableProcess import TableProcessModel
-from Utils import *
+from models.TableProcessModel_v2 import TableProcessModel
+from tools.Utils import *
 from Workers import *
 
 
@@ -25,7 +34,7 @@ class ImageProcessingApp(QWidget):
     def __init__(self):
         super().__init__()
         # window setting
-        self.setWindowTitle("问卷表格智能统分助手")   # 设置窗口名
+        self.setWindowTitle("问卷表格智能统分助手")  # 设置窗口名
         self.setWindowIcon(QIcon("./resources/icon16x16.png"))
 
         # self.setBaseSize(640, 480)
@@ -51,9 +60,12 @@ class ImageProcessingApp(QWidget):
         # self.image_label.setScaledContents(True)
         self.image_label.setAlignment(Qt.AlignCenter)
         # default image
-        self.image_label.setPixmap(self.scale_image(
-            # QPixmap.fromImage(QImage('./table.jpg'))))
-            QPixmap.fromImage(QImage('./resources/home_screen.png'))))
+        self.image_label.setPixmap(
+            self.scale_image(
+                # QPixmap.fromImage(QImage('./table.jpg'))))
+                QPixmap.fromImage(QImage("./resources/home_screen.png"))
+            )
+        )
 
         self.image_scroll_area = QScrollArea()
         # self.image_scroll_area.resize(400, 400)
@@ -89,7 +101,9 @@ class ImageProcessingApp(QWidget):
         # service
         self.images_need_process = []
         self.images_processed = []
-        self.images_temp_during_process = {}  # 中间图像 绘制row 绘制col 绘制cell image_name:[]
+        self.images_temp_during_process = (
+            {}
+        )  # 中间图像 绘制row 绘制col 绘制cell image_name:[]
         self.next_idx = 0
         # self.contoller = TableProcessController()
         # self.contoller.processing_done.connect(self.update_ui)
@@ -105,7 +119,8 @@ class ImageProcessingApp(QWidget):
     def open_file(self):
         # 打开图像文件
         file_name, _ = QFileDialog.getOpenFileName(
-            self, "打开图像", "", "Image Files (*.png *.jpg *.bmp)")
+            self, "打开图像", "", "Image Files (*.png *.jpg *.bmp)"
+        )
         if file_name:
             # 加载图像并显示
             pixmap = QPixmap(file_name)
@@ -113,36 +128,43 @@ class ImageProcessingApp(QWidget):
             self.images_need_process.extend([file_name])
             self.show_image(pixmap)
             self.show_progress_label.setText(
-                f"当前进度: 0/{len(self.images_need_process)}")
+                f"当前进度: 0/{len(self.images_need_process)}"
+            )
 
     def open_folder(self):
         # 打开图像文件夹
         folder_path = QFileDialog.getExistingDirectory(self, "打开图像文件夹")
         if folder_path:
             # print(type(folder_path),folder_path)
-            image_files = [folder_path + "/" + image for image in os.listdir(folder_path) if
-                           os.path.splitext(image)[-1] in IMAGE_EXTS]
+            image_files = [
+                folder_path + "/" + image
+                for image in os.listdir(folder_path)
+                if os.path.splitext(image)[-1] in IMAGE_EXTS
+            ]
             self.images_need_process.extend(image_files)
             QMessageBox.information(
-                self, "info", f'当前文件下一共{len(image_files)}张图片待处理')
+                self, "info", f"当前文件下一共{len(image_files)}张图片待处理"
+            )
             self.show_progress_label.setText(
-                f"当前进度: 0/{len(self.images_need_process)}")
+                f"当前进度: 0/{len(self.images_need_process)}"
+            )
         else:
             QMessageBox.information(self, "error", "文件夹打开失败")
 
     def clear_queue(self):
-        if(len(self.images_need_process) == 0):
-            QMessageBox.information(self,"info","当前图像队列为空")
+        if len(self.images_need_process) == 0:
+            QMessageBox.information(self, "info", "当前图像队列为空")
             # return # continue execute
         self.images_need_process.clear()
-        self.show_progress_label.setText(
-            "当前进度: 0/0")
-        self.show_label.setText('图像状态')
-        self.image_label.setPixmap(self.scale_image(
-            # QPixmap.fromImage(QImage('./table.jpg'))))
-            QPixmap.fromImage(QImage('./resources/home_screen.png'))))
-        QMessageBox.information(
-            self, "info", '待处理图像队列已清空，请重新选取图像')
+        self.show_progress_label.setText("当前进度: 0/0")
+        self.show_label.setText("图像状态")
+        self.image_label.setPixmap(
+            self.scale_image(
+                # QPixmap.fromImage(QImage('./table.jpg'))))
+                QPixmap.fromImage(QImage("./resources/home_screen.png"))
+            )
+        )
+        QMessageBox.information(self, "info", "待处理图像队列已清空，请重新选取图像")
 
     def show_image(self, image_pixmap: QPixmap, info=True):
         # self.image_label.setPixmap(image_pixmap)
@@ -161,8 +183,7 @@ class ImageProcessingApp(QWidget):
         image_height = image_pixmap.height()
 
         # 计算缩放比例
-        scale_factor = min(label_width / image_width,
-                           label_height / image_height)
+        scale_factor = min(label_width / image_width, label_height / image_height)
         scaled_width = int(image_width * scale_factor)
         scaled_height = int(image_height * scale_factor)
         # scaled_width = 300
@@ -170,7 +191,8 @@ class ImageProcessingApp(QWidget):
         # print(scaled_width, scaled_height)
         # 缩放图像
         pixmap = image_pixmap.scaled(
-            scaled_width, scaled_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            scaled_width, scaled_height, Qt.KeepAspectRatio, Qt.SmoothTransformation
+        )
 
         return pixmap
 
@@ -195,16 +217,15 @@ class ImageProcessingApp(QWidget):
     def process_images_v2(self):
         if self.model is None:
             QMessageBox.information(
-                self, 'info', "Model has not been loaded successfully! Please wait")
+                self, "info", "Model has not been loaded successfully! Please wait"
+            )
             return
         if len(self.images_need_process) == 0:
-            QMessageBox.information(
-                self, 'info', "No Image loaded! Please load images")
+            QMessageBox.information(self, "info", "No Image loaded! Please load images")
             return
         self.process_button.setEnabled(False)
         self.thread = QThread()
-        self.worker = ImageProcessWorker(
-            self.images_need_process, self.model, log=True)
+        self.worker = ImageProcessWorker(self.images_need_process, self.model, log=True)
         self.worker.moveToThread(self.thread)
 
         self.worker.image_processed.connect(self.update_ui)
@@ -221,10 +242,10 @@ class ImageProcessingApp(QWidget):
             table_process = TableProcessModel()
         for image_path in self.images_need_process:
             self.show_image(QPixmap(image_path), info=False)
-            print('processing ', image_path, '--->', end=' ')
+            print("processing ", image_path, "--->", end=" ")
             table_process.run(image_path)
-            print('done')
-        print('all images processed')
+            print("done")
+        print("all images processed")
 
     @pyqtSlot(str)
     def update_ui(self, state_info):
@@ -235,7 +256,8 @@ class ImageProcessingApp(QWidget):
     def load_image_on_screen(self, idx):
         if idx < len(self.images_need_process):
             self.show_progress_label.setText(
-                f"当前进度: {idx + 1}/{len(self.images_need_process)}")
+                f"当前进度: {idx + 1}/{len(self.images_need_process)}"
+            )
             self.show_image(QPixmap(self.images_need_process[idx]), info=False)
             time.sleep(1)
 
@@ -245,10 +267,11 @@ class ImageProcessingApp(QWidget):
         # self.show_label.setText("All images processed!")
         # add only for opening single image
         self.show_progress_label.setText(
-            f"当前进度: {len(self.images_need_process)}/{len(self.images_need_process)}")
-        QMessageBox.information(self, 'info', "所有图片都已处理完成")
+            f"当前进度: {len(self.images_need_process)}/{len(self.images_need_process)}"
+        )
+        QMessageBox.information(self, "info", "所有图片都已处理完成")
         self.process_button.setEnabled(True)
-        self.model.score_eval.score_history_to_xlsx()
+        self.model.a4table_score_eval_service.score_history_to_xlsx()
 
         # 清理线程
         self.worker.deleteLater()
@@ -262,13 +285,13 @@ class ImageProcessingApp(QWidget):
         self.images_need_process.clear()
 
         # 清理统计得分历史
-        self.model.score_eval.score_history.clear()
+        self.model.a4table_score_eval_service.score_history.clear()
 
     def show_instructions(self):
         QMessageBox.information(
             self,
             "Info",
-            '''
+            """
         性能：cuda~3.5s/张; cpu~4.5s/张
         使用说明：
         1. 需要等待提示模型加载完成后方可使用
@@ -276,7 +299,7 @@ class ImageProcessingApp(QWidget):
         3. 如果启用中间图像缓存, 放置在图像所在文件夹 cache 中
         4. 输出xlsx文件放置在图片同级目录下
         5. 每处理一次,输出一次处理过程中所有表格的得分统计
-        ''',
+        """,
         )
 
 

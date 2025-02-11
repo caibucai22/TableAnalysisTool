@@ -13,9 +13,9 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QTimer
 from app_ui import ImageProcessingApp
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ImageProcessingApp()
     window.show()
-    QTimer.singleShot(500,window.show_instructions)
+    QTimer.singleShot(500, window.show_instructions)
     sys.exit(app.exec_())
