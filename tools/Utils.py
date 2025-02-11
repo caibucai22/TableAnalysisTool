@@ -9,7 +9,7 @@ TODO     :
          :
 """
 
-from typing import Union,List
+from typing import Union, List
 import os
 import subprocess
 import platform
@@ -25,6 +25,78 @@ import torch
 
 InputType = Union[str, np.ndarray, bytes, Path]
 
+import logging
+from tools.Logger import get_logger
+
+logger = get_logger(__file__, log_level=logging.INFO)
+
+
+import cv2
+import numpy as np
+
+def check_checkmark(
+    target_img_path: str, 
+    template_img_path: str, 
+    threshold: float = 0.8,
+    visualize: bool = False
+) -> bool:
+    """
+    使用模板匹配检测目标图像中是否存在对号（勾选符号）
+    
+    参数:
+        target_img_path (str): 目标图像路径
+        template_img_path (str): 对号模板图像路径
+        threshold (float): 匹配阈值（0~1），默认0.8
+        visualize (bool): 是否可视化匹配结果，默认False
+        
+    返回:
+        bool: 是否存在对号
+    """
+    # 读取图像并转换为灰度图
+    target_img = cv2.imread(target_img_path)
+    template_img = cv2.imread(template_img_path)
+    
+    if target_img is None or template_img is None:
+        raise ValueError("图像读取失败，请检查路径是否正确")
+        
+    target_gray = cv2.cvtColor(target_img, cv2.COLOR_BGR2GRAY)
+    template_gray = cv2.cvtColor(template_img, cv2.COLOR_BGR2GRAY)
+    
+    # 获取模板尺寸
+    h, w = template_gray.shape
+    
+    # 执行模板匹配（使用归一化相关系数匹配法）
+    result = cv2.matchTemplate(
+        target_gray, 
+        template_gray, 
+        cv2.TM_CCOEFF_NORMED
+    )
+    
+    # 获取最大匹配值和位置
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+    
+    # 可视化匹配结果（调试使用）
+    if visualize:
+        # 绘制匹配区域矩形框
+        top_left = max_loc
+        bottom_right = (top_left[0] + w, top_left[1] + h)
+        cv2.rectangle(
+            target_img, 
+            top_left, 
+            bottom_right, 
+            (0, 255, 0), 
+            2
+        )
+        
+        # 显示匹配结果
+        cv2.imshow('Detection Result', target_img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    
+    # 判断是否超过阈值
+    return max_val >= threshold
+
+    
 
 def open_folder(folder_path):
     if platform.system() == "Windows":
@@ -200,17 +272,19 @@ def img_load_by_Image(img: InputType) -> Image.Image:
     raise LoadImageError(f"{type(img)} is not supported!")
 
 
-def images_convert(input_images: List[Union[str, Image.Image, np.ndarray]], to_type: str) -> List[np.ndarray]:
+def images_convert(
+    input_images: List[Union[str, Image.Image, np.ndarray]], to_type: str
+) -> List[np.ndarray]:
     """
     Convert a list of images into the specified type.
-    
+
     Args:
         input_images (List[Union[str, Image.Image, np.ndarray]]): A list of images, which could be file paths, PIL Image, or np.ndarray.
         to_type (str): The desired output type, either 'image' for PIL Image or 'cv2' for np.ndarray.
-    
+
     Returns:
         List[np.ndarray]: A list of images in the desired format (np.ndarray or PIL Image).
-    
+
     Raises:
         ValueError: If the input list contains invalid types or the conversion is not possible.
     """
@@ -222,11 +296,13 @@ def images_convert(input_images: List[Union[str, Image.Image, np.ndarray]], to_t
             img_path = os.path.abspath(img)
             if os.path.exists(img_path):
                 # Open the image based on path, cv2 for 'cv2' type, PIL for 'image' type
-                if to_type == 'Image':
+                if to_type == "Image":
                     pil_img = Image.open(img_path).convert("RGB")
                     converted_images.append(pil_img)
-                elif to_type == 'cv2':
-                    cv2_img = cv2.imdecode(np.fromfile(img_path, dtype=np.uint8), cv2.IMREAD_COLOR)
+                elif to_type == "cv2":
+                    cv2_img = cv2.imdecode(
+                        np.fromfile(img_path, dtype=np.uint8), cv2.IMREAD_COLOR
+                    )
                     if cv2_img is None:
                         raise ValueError(f"Failed to load image from path: {img_path}")
                     converted_images.append(cv2_img)
@@ -235,25 +311,31 @@ def images_convert(input_images: List[Union[str, Image.Image, np.ndarray]], to_t
             else:
                 raise ValueError(f"File does not exist: {img_path}")
         elif isinstance(img, Image.Image):  # PIL Image
-            if to_type == 'Image':
+            if to_type == "Image":
                 converted_images.append(img)
-            elif to_type == 'cv2':
+            elif to_type == "cv2":
                 # Convert PIL Image to cv2 (numpy.ndarray)
                 cv2_img = np.array(img)
-                cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)  # Convert RGB to BGR if needed
+                cv2_img = cv2.cvtColor(
+                    cv2_img, cv2.COLOR_RGB2BGR
+                )  # Convert RGB to BGR if needed
                 converted_images.append(cv2_img)
             else:
                 raise ValueError("Invalid target type. Must be 'image' or 'cv2'.")
         elif isinstance(img, np.ndarray):  # cv2 image
-            if to_type == 'cv2':
+            if to_type == "cv2":
                 converted_images.append(img)
-            elif to_type == 'Image':
-                pil_img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))  # Convert BGR to RGB for PIL
+            elif to_type == "Image":
+                pil_img = Image.fromarray(
+                    cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                )  # Convert BGR to RGB for PIL
                 converted_images.append(pil_img)
             else:
                 raise ValueError("Invalid target type. Must be 'image' or 'cv2'.")
         else:
-            raise ValueError("Invalid input type. Must be path (str), PIL Image, or np.ndarray.")
+            raise ValueError(
+                "Invalid input type. Must be path (str), PIL Image, or np.ndarray."
+            )
 
     return converted_images
 
@@ -398,23 +480,35 @@ def draw_table(image: Image, table_data: TableEntity, save_dir, **kwargs):
 
             white_background.save(save_dir + "/" + "sorted_cells.jpg")
     if cut_cell and (len(cells_box_list) > 0):
-        print("enable cutting cells")
+        logger.info("enable cutting cells")
         for i, cell in enumerate(cells_box_list):
-            x = i // len(cols_box_list)
-            y = i % len(cols_box_list)
+            try:
+                cell_image = image.crop(cell)
+                x = i // len(cols_box_list)
+                y = i % len(cols_box_list)
+                cell_image.save(save_dir + "/" + f"cell_{x}_{y}" + ".jpg")
+            except Exception as e:
+                logger.error(f"{e}")
+                logger.info("don't undstand structure ,naming cells default from 0,1,2")
+                cell_image.save(save_dir + "/" + f"cell_{i}" + ".jpg")
 
-            cell_image = image.crop(cell)
-            cell_image.save(save_dir + "/" + f"cell_{x}_{y}" + ".jpg")
-        print("cutting cells done")
+        logger.info("cutting cells done")
 
 
 def draw_locate(
-    image: Union[str, Image.Image], bboxs: list, save_dir, cut=False, adjust_ratio=0.05
+    image: Union[str, Image.Image],
+    bboxs: list,
+    save_dir,
+    cut=False,
+    return_crops=False,
+    adjust_ratio=0.05,
 ):
     if isinstance(image, str):
         image = img_load_by_Image(image).convert("RGB")
     table_locate_draw_image = image.copy()
     locate_draw = ImageDraw.Draw(table_locate_draw_image)
+    # bboxs = sorted(bboxs, key=lambda x: (x[2] + x[0]) / 2 + (x[3] + x[1]) / 2)
+    crop_tables = []
     for i, bbox in enumerate(bboxs):
         adjust_width = (bbox[2] - bbox[0]) * adjust_ratio * 0.5
         adjust_height = (bbox[3] - bbox[1]) * adjust_ratio * 0.5
@@ -428,9 +522,14 @@ def draw_locate(
         crop_box = bbox
         draw_box = [(bbox[0], bbox[1]), (bbox[2], bbox[3])]
         if cut:
-            image.crop(crop_box).save(save_dir + "/" + f"locate_table_{i+1}.jpg")
+            crop_table = image.crop(crop_box)
+            crop_table.save(save_dir + "/" + f"locate_table_{i+1}.jpg")
+            if return_crops:
+                crop_tables.append(crop_table)
         locate_draw.rectangle(draw_box, outline="red", width=3)
     table_locate_draw_image.save(save_dir + "/" + "locate_table.jpg")
+    if return_crops:
+        return crop_tables
 
 
 def adjst_box(bbox: list, ratio=0.05, toint=True):
