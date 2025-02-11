@@ -74,8 +74,13 @@ class A3Split:
         pass
 
     @staticmethod
-    def split(img_path, original_shape):
+    def split(img_path, original_shape, **kwargs):
+        """
+        original_shape : should be return by Image.shape -> width ,height
+        """
         save_dir, image_name = osp.split(img_path)
+        if kwargs.get("save_dir") is not None:
+            save_dir = kwargs.get("save_dir")
         image_basename, _ = osp.splitext(image_name)
         img = img_load_by_cv2(img_path=img_path)
 
@@ -84,7 +89,10 @@ class A3Split:
         # print("original shape", original_shape)
         # print("undistort shape", img.shape)
 
-        vertical = img.shape == original_shape
+        if len(img.shape) == len(original_shape):
+            vertical = img.shape == original_shape
+        else:
+            vertical = (height == original_shape[1]) and (width == original_shape[0])
         half = None
         other_half = None
         if vertical:
@@ -111,12 +119,11 @@ class A3Split:
             )
 
         # 保存分割后的图像
-        cv2.imencode(".jpg", half)[1].tofile(
-            save_dir + "/" + f"{image_basename}_left_half.jpg"
-        )
-        cv2.imencode(".jpg", other_half)[1].tofile(
-            save_dir + "/" + f"{image_basename}_right_half.jpg"
-        )
+        left_half_path = save_dir + "/" + f"{image_basename}_left_half.jpg"
+        rght_half_path = save_dir + "/" + f"{image_basename}_right_half.jpg"
+        cv2.imencode(".jpg", half)[1].tofile(left_half_path)
+        cv2.imencode(".jpg", other_half)[1].tofile(rght_half_path)
+        return left_half_path, rght_half_path
 
     @staticmethod
     def split_by_locates():
@@ -132,7 +139,8 @@ def test_rapid_undistort_prepocess():
 
 
 def test_a3split():
-    img_path = "C:/Users/001/Pictures/ocr/v2/undistort_微信图片_20250117213143.jpg"
+    # img_path = "C:/Users/001/Pictures/ocr/v2/undistort_微信图片_20250117213143.jpg"
+    img_path = "C:/Users/001/Pictures/ocr/v2/a3_single_test.jpg"
     original_shape = img_load_by_cv2(img_path).shape
     a3split = A3Split()
     a3split.split(img_path=img_path, original_shape=original_shape)
