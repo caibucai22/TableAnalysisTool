@@ -13,8 +13,8 @@ from PIL import Image
 from Settings import *
 import torch
 from typing import Union
-from Logger import get_logger
-import Utils
+from tools.Logger import get_logger
+from tools import Utils
 
 logger = get_logger(__file__)
 

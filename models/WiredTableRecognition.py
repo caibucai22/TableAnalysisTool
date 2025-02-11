@@ -18,21 +18,23 @@ from wired_table_rec.utils_table_recover import (
     box_4_2_poly_to_box_4_1,
     sorted_ocr_boxes,
 )
-import logging
-from Logger import get_logger
+
 import cv2
 from PIL import Image, UnidentifiedImageError
 import numpy as np
 import traceback
 import time
 
-logger = get_logger(__file__, log_level=logging.WARNING)
-
 from pathlib import Path
 
 InputType = Union[str, np.ndarray, bytes, Path]
-from Exceptions import OnnxRuntimeError
-from Utils import img_load_by_Image, img_convert_to_bgr
+from tools.Exceptions import OnnxRuntimeError
+from tools.Utils import img_load_by_Image, img_convert_to_bgr
+
+import logging
+from tools.Logger import get_logger
+
+logger = get_logger(__file__, log_level=logging.WARNING)
 
 
 class OrtInferSession:
@@ -170,7 +172,8 @@ def main():
     image_dir = "C:/Users/001/Pictures/ocr/jpg"
     img_list = [image_dir + "/" + image for image in os.listdir(image_dir)]
     img_inputs = [
-        img_convert_to_bgr(np.array(img_load_by_Image(img_input))) for img_input in img_list
+        img_convert_to_bgr(np.array(img_load_by_Image(img_input)))
+        for img_input in img_list
     ]
     now = time.time()
     for img in img_inputs:

@@ -13,10 +13,10 @@ import time
 import torch
 from paddle import device
 import cv2
-from ScoreEvaluation import ScoreEvaluation
+
+# from ScoreEvaluation import ScoreEvaluation
 from Settings import *
-import logging
-from tools.Logger import get_logger
+
 from typing import Union
 from models.TableLocateModels import PaddleLocate, YoloLocate
 from models.TableTransformer import TableTransformer
@@ -26,6 +26,10 @@ from adapters.CycleCenterNetAdapter import CycleCenterNetAdapter
 import tools.Utils as Utils
 from adapters.Table import TableEntity
 from PIL import Image
+from service.custom.ScoreEvaluation_v2 import A4ScoreEvaluation
+
+import logging
+from tools.Logger import get_logger
 
 logger = get_logger(__file__, log_level=logging.INFO)
 
@@ -67,7 +71,8 @@ class TableProcessModel:
         self.load_models(table_locate_model, table_struct_model, ocr_model)
 
         # service
-        self.score_eval = ScoreEvaluation()
+        # self.score_eval = ScoreEvaluation()
+        self.a4_table_score_eval = A4ScoreEvaluation()
         self.table_data = None
 
     def load_models(self, table_locate_model, table_struct_model, ocr_model):
@@ -110,15 +115,17 @@ class TableProcessModel:
         n_row, n_col = len(self.table_data.row_bbox_list), len(
             self.table_data.col_bbox_list
         )
-        self.score_eval.load_next(
+        # self.score_eval.load_next(
+        self.a4_table_score_eval.load_next(
             image_score,
             self.table_data.cell_bbox_list,
             image_name=self.cur_image_name,
+            image_type = "A4_SINGLE_TABLE",
             save_dir=self.cur_image_dir,
             n_row=n_row,
             n_col=n_col,
-            score_col_start_idx=SCORE_COL_START_IDX,
-            score_col_end_idx=SCORE_COL_END_IDX,
+            # score_col_start_idx=SCORE_COL_START_IDX,
+            # score_col_end_idx=SCORE_COL_END_IDX,
         )
 
     @timeit_decorator(enable_print=False)
@@ -136,6 +143,7 @@ class TableProcessModel:
                 self.table_data,
                 save_dir=self.cur_image_dir,
                 cut_cell=ENABLE_CUT_CELLS,
+                draw_cell=True
             )
         logger.info(f"current table parsed done")
         logger.info(f"setup score evaluation service")
@@ -160,12 +168,16 @@ class TableProcessModel:
             # assert table sructure
             # if not self.table_data.is_matched(): # gt
             #     raise Exception("structure donot matched")
-            self.score_eval.eval_score()
-            self.score_eval.to_xlsx()
+            # self.score_eval.eval_score()
+            # self.score_eval.to_xlsx()
+            self.a4_table_score_eval.eval_score()
+            self.a4_table_score_eval.to_xlsx()
         except Exception as e:
-            print("run error ", e)
-            self.score_eval.eval_score(process_failure=True)
-            self.score_eval.to_xlsx(process_failure=True)
+            logger(f"run error {e}")
+            # self.score_eval.eval_score(process_failure=True)
+            # self.score_eval.to_xlsx(process_failure=True)
+            self.a4_table_score_eval.eval_score(process_failure=True)
+            self.a4_table_score_eval.to_xlsx(process_failure=True)
 
     @staticmethod
     def clear():
@@ -192,12 +204,16 @@ if __name__ == "__main__":
     print("single test elapsed time ", time.time() - t_single_start)
 
     # multi_test ~3s
-    n = len(table_img_path_list)
-    print("found {} images".format(n))
-    t_multi_test = time.time()
-    for img_path in table_img_path_list:
-        table_process.run(img_path)
-    print('multi test elapsed time ', time.time() - t_multi_test, 'mean time: ',
-          (time.time() - t_multi_test) / n)
+    # n = len(table_img_path_list)
+    # print("found {} images".format(n))
+    # t_multi_test = time.time()
+    # for img_path in table_img_path_list:
+    #     table_process.run(img_path)
+    # print(
+    #     "multi test elapsed time ",
+    #     time.time() - t_multi_test,
+    #     "mean time: ",
+    #     (time.time() - t_multi_test) / n,
+    # )
 
     table_process.clear()
