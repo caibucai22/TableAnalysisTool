@@ -20,6 +20,7 @@ cache
 *.jpeg
 *.gif
 *.webp
+**/*.pyc
 !test_images/*
 !table.jpg
 !resources/** 
@@ -33,3 +34,5 @@ cache
 !README_en.md
 
 log.txt.*
+
+*.egg-info
