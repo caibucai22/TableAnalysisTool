@@ -1,0 +1,1 @@
+from .paddle_ocr_service import PaddleOCRService
