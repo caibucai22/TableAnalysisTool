@@ -8,5 +8,5 @@ class YoloLocateService(ITableLocateService):
         self.model = YoloLocate()  # 原有定位模型
 
     def locate_table(self, image_path: str) -> np.array:
-        boxs = self.model.infer(image_path)
-        return boxs
+        bboxs,roi_imgs = self.model.infer(image_path)
+        return bboxs,roi_imgs
