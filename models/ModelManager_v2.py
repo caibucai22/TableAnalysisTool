@@ -220,6 +220,14 @@ model_manger.register_model(
     config={"model_path": "./hf_models/bingo-cls.onnx"},
 )
 
+model_manger.register_model(
+    model_name="bingo_det",
+    loader=lambda **kwargs: YOLO(**kwargs),
+    config={
+        "model": "./hf_models/bingo_det.pt"
+    },
+)
+
 
 model_manger.register_model(
     model_name="rapid_undistort_engine_preprocess",

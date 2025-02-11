@@ -6,9 +6,9 @@ from paddleocr import PPStructure, PaddleOCR
 from models.YoloClsInfer import Yolov8_cls_PIL
 from models.WiredTableRecognition import WiredTableStructureModel
 from Settings import *
-from Logger import get_logger
-import logging
 
+import logging
+from tools.Logger import get_logger
 logger = get_logger(__file__, log_level=logging.INFO)
 
 
@@ -65,7 +65,9 @@ class ModelManager:
     def get_table_structure_feature_extractor_model() -> DetrFeatureExtractor:
         if ModelManager._table_structure_feature_extractor_model is None:
             logger.info("Loading Table Structure Feature Extractor Model...")
-            ModelManager._table_structure_feature_extractor_model = DetrFeatureExtractor()
+            ModelManager._table_structure_feature_extractor_model = (
+                DetrFeatureExtractor()
+            )
         return ModelManager._table_structure_feature_extractor_model
 
     @staticmethod
