@@ -95,58 +95,63 @@ class ImageScaler:
         """平移视图
         :param delta: 鼠标移动的像素差值
         """
-        # 计算有效平移范围
-        img_width = self.image_label.width()
-        img_height = self.image_label.height()
-        viewport = self.scroll_area.viewport()
+        # # 计算有效平移范围
+        # img_width = self.image_label.width()
+        # img_height = self.image_label.height()
+        # viewport = self.scroll_area.viewport()
 
-        # 限制最大偏移量
-        max_x = max(0, img_width - viewport.width())
-        max_y = max(0, img_height - viewport.height())
+        # # 限制最大偏移量
+        # max_x = max(0, img_width - viewport.width())
+        # max_y = max(0, img_height - viewport.height())
 
-        new_x = min(max(0, self.image_scaler._offset.x() + delta.x()), max_x)
-        new_y = min(max(0, self.image_scaler._offset.y() + delta.y()), max_y)
+        # new_x = min(max(0, self.image_scaler._offset.x() + delta.x()), max_x)
+        # new_y = min(max(0, self.image_scaler._offset.y() + delta.y()), max_y)
 
-        self._offset = QPoint(new_x, new_y)
-        # self._offset += delta
+        # self._offset = QPoint(new_x, new_y)
+
+        # v1
+        self._offset += delta
 
     def get_transformed_pixmap(self) -> QPixmap:
         """获取变换后的图像"""
         if self._original_pixmap.isNull():
             return QPixmap()
-        # 创建足够大的画布
-        canvas_size = (
-            self._original_pixmap.size() * self.current_scale
-        )
-        canvas_size += QSize(100, 100)  # 添加边距
 
-        final_pixmap = QPixmap(canvas_size)
-        final_pixmap.fill(Qt.transparent)
-
-        painter = QPainter(final_pixmap)
-        painter.drawPixmap(
-            self.view_offset,
-            self._original_pixmap.scaled(
-                self._original_pixmap.size()
-                * self.current_scale,
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation,
-            ),
-        )
-        painter.end()
-
-        # # 应用缩放变换
-        # transform = QTransform().scale(self._current_scale, self._current_scale)
-        # scaled_pixmap = self._original_pixmap.transformed(
-        #     transform, Qt.SmoothTransformation
+        # v2 TODO: 还未处理好
+        # # 创建足够大的画布
+        # canvas_size = (
+        #     self._original_pixmap.size() * self.current_scale
         # )
+        # canvas_size += QSize(100, 100)  # 添加边距
 
-        # # 应用偏移变换
-        # final_pixmap = QPixmap(scaled_pixmap.size())
+        # final_pixmap = QPixmap(canvas_size)
         # final_pixmap.fill(Qt.transparent)
+
         # painter = QPainter(final_pixmap)
-        # painter.drawPixmap(self._offset, scaled_pixmap)
+        # painter.drawPixmap(
+        #     self.view_offset,
+        #     self._original_pixmap.scaled(
+        #         self._original_pixmap.size()
+        #         * self.current_scale,
+        #         Qt.KeepAspectRatio,
+        #         Qt.SmoothTransformation,
+        #     ),
+        # )
         # painter.end()
+
+        # v1
+        # 应用缩放变换
+        transform = QTransform().scale(self._current_scale, self._current_scale)
+        scaled_pixmap = self._original_pixmap.transformed(
+            transform, Qt.SmoothTransformation
+        )
+
+        # 应用偏移变换
+        final_pixmap = QPixmap(scaled_pixmap.size())
+        final_pixmap.fill(Qt.transparent)
+        painter = QPainter(final_pixmap)
+        painter.drawPixmap(self._offset, scaled_pixmap)
+        painter.end()
 
         return final_pixmap
 
@@ -180,11 +185,13 @@ class ImageDisplayWidget(QWidget):
         self.scroll_area.setWidgetResizable(False)
         self.scroll_area.setAlignment(Qt.AlignCenter)
         self.scroll_area.setViewportMargins(0, 0, 0, 0)
-        self.scroll_area.setStyleSheet("""
+        self.scroll_area.setStyleSheet(
+            """
             QScrollArea { border: none; }
             QScrollBar:vertical { width: 12px; }
             QScrollBar:horizontal { height: 12px; }
-        """)
+        """
+        )
 
         self.image_label = QLabel(self)
         self.image_label.setAlignment(Qt.AlignCenter)
@@ -214,10 +221,22 @@ class ImageDisplayWidget(QWidget):
         control_layout.addWidget(self.prev_button)
         # 状态按钮
         self.status_button = QPushButton(
-            "preparing", self
+            # "preparing", self
+            "准备中",
+            self,
         )  # preparing prepared processing processed
         self.status_button.setFixedSize(100, 40)
+        self.status_button.setEnabled(False)
         control_layout.addWidget(self.status_button)
+
+        self.status_button2 = QPushButton(
+            # "preparing", self
+            "准备中",
+            self,
+        )  # preparing prepared processing processed
+        self.status_button2.setFixedSize(100, 40)
+        self.status_button2.setEnabled(False)
+        control_layout.addWidget(self.status_button2)
 
         self.next_button = QPushButton(">", self)
         self.next_button.setFixedSize(60, 40)
@@ -276,23 +295,25 @@ class ImageDisplayWidget(QWidget):
         if self.current_index < len(self.image_paths):
             # image = QImage(self.image_paths[self.current_index])
             # 使用QImageReader处理方向
-            reader = QImageReader(self.image_paths[self.current_index])
-            reader.setAutoTransform(True)  # 启用自动转换
-            image = reader.read()
-            pixmap = QPixmap.fromImage(image)
+            try:
+                reader = QImageReader(self.image_paths[self.current_index])
+                reader.setAutoTransform(True)  # 启用自动转换
+                image = reader.read()
+                pixmap = QPixmap.fromImage(image)
+                # 获取实际显示区域尺寸
+                container_size = self.scroll_area.size()
+                if container_size.width() == 0 or container_size.height() == 0:
+                    container_size = self.size()  # 使用widget尺寸作为备用
 
-            # 获取实际显示区域尺寸
-            container_size = self.scroll_area.size()
-            if container_size.width() == 0 or container_size.height() == 0:
-                container_size = self.size()  # 使用widget尺寸作为备用
-
-            self.image_scaler.initialize(pixmap=pixmap, container_size=container_size)
-            logger.info(f"scale_factor is {self.image_scaler.current_scale}")
-            self.update_display()
-            logger.info("scale to fit display")
+                self.image_scaler.initialize(pixmap=pixmap, container_size=container_size)
+                logger.info(f"scale_factor is {self.image_scaler.current_scale}")
+                self.update_display()
+                logger.info("scale to fit display")
+            except:
+                logger.error("load image failed")
         else:
             self.image_label.clear()
-            self.status_label.setText("No more images")
+            # self.status_label.setText("No more images")
 
     def show_previous_image(self):
         self.current_index = max(0, self.current_index - 1)
@@ -398,6 +419,22 @@ class ImageDisplayWidget(QWidget):
 
         painter.end()
 
+    def update_process_button_state(
+        self, button: QPushButton, status, text_normal=None, disabled=False, color=None
+    ):
+        if text_normal:
+            button.setText(text_normal)  # 恢复正常文本
+        else:
+            button.setText(status)  # 设置为状态文本
+        button.setEnabled(not disabled)
+
+        if color:
+            button.setStyleSheet(
+                f"background-color: {color}; color: white;"
+            )  # 设置背景颜色和文字颜色
+        else:
+            button.setStyleSheet("")  # 移除自定义样式，恢复默认样式
+
     # ------------------------------------- utils --------------------------------
     def update_display(self):
         """更新图像显示"""
@@ -431,3 +468,27 @@ class ImageDisplayWidget(QWidget):
     def reset_view(self):
         self.image_scaler.reset()
         self.update_display()
+
+    def update_button_state(
+        self,
+        button,
+        status_text,
+        text_normal=None,
+        disabled=False,
+        color=None,
+    ):
+        """更新按钮和状态标签的显示状态"""
+        if text_normal:
+            button.setText(text_normal)  # 恢复正常文本
+        else:
+            button.setText(status_text)  # 设置为状态文本
+
+        # status_label.setText(f"状态: {status_text}")
+        button.setEnabled(not disabled)  # 设置按钮的启用/禁用状态
+
+        if color:
+            button.setStyleSheet(
+                f"background-color: {color}; color: white;"
+            )  # 设置背景颜色和文字颜色
+        else:
+            button.setStyleSheet("")  # 移除自定义样式，恢复默认样式
