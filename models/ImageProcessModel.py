@@ -21,7 +21,6 @@ import logging
 from tools.Logger import get_logger
 
 logger = get_logger(__file__, log_level=logging.INFO)
-
 from config import load_config
 
 app_config = load_config("config.yaml")
@@ -102,12 +101,13 @@ class ImageProcessModel:
 
 
 if __name__ == "__main__":
-    table_img_path = "C:/Users/001/Pictures/ocr/v2/v2_test_left.jpg"
-    image_dir = "./test_images"
-    table_img_path_list = [
-        image_dir + "/" + imgname
-        for imgname in os.listdir(image_dir)
-        if os.path.splitext(imgname)[-1] in [".jpg"]
-    ]
-    app = ImageProcessModel()
-    app.run(table_img_path)
+    # table_img_path = "C:/Users/001/Pictures/ocr/v2/v2_test_left.jpg"
+    # image_dir = "./test_images"
+    # table_img_path_list = [
+    #     image_dir + "/" + imgname
+    #     for imgname in os.listdir(image_dir)
+    #     if os.path.splitext(imgname)[-1] in [".jpg"]
+    # ]
+    # app = ImageProcessModel()
+    # app.run(table_img_path)
+    pass

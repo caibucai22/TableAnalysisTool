@@ -60,16 +60,3 @@ class TableTransformer:
             logger.error("feature encoding or infer split failed", exc_info=True)
             return {}
         return results
-
-
-def main():
-    model = TableTransformer()
-    img_path = "./test_images/table0.jpg"
-    img = Image.open(img_path).convert("RGB")
-    results = model.infer(img)
-    for k, v in results.items():
-        print(k)
-
-
-if __name__ == "__main__":
-    main()

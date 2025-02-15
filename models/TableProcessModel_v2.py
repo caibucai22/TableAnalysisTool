@@ -145,7 +145,7 @@ class TableProcessModel(ImageProcessModel):
                 table_image,
                 self.table_data.cell_bbox_list,
                 image_name=self.cur_image_name,
-                image_type="A3_RIGHT_NO_3_TABLE",
+                image_type="A4_SINGLE_TABLE",
                 save_dir=self.each_image_cache_dir,
                 n_row=n_row,
                 n_col=n_col,
@@ -321,12 +321,20 @@ class TableProcessModel(ImageProcessModel):
                         logger.info(f"{key}: {value}")
         logger.info("current eval_a3 epoch done!")
 
+    def export_and_open_excel(self):
+        pass
+
+    def export_and_open_history(self):
+        pass
+
     def run(self, next_image_path, action=""):
         try:
             self.reset_results()
             self.load_image(next_image_path)
             if action == "a4_eval":
                 self.a4_eval()
+            elif action == "a3_split":
+                self.a3_split()
             elif action == "a3_eval":
                 self.a3_split()
                 self.a3_eval()
@@ -346,41 +354,3 @@ class TableProcessModel(ImageProcessModel):
     def clear():
         torch.cuda.empty_cache()
         device.cuda.empty_cache()
-
-
-def test_a3_direct_rec_by_cell():
-    pass
-
-
-if __name__ == "__main__":
-    # table_img_path = "C:/Users/001/Pictures/ocr/v2/v2_test_left.jpg"
-    # table_img_path = "C:/Users/001/Pictures/ocr/v2/locate_table_3.jpg"
-    table_img_path = "C:/Users/001/Pictures/ocr/v2/a3_single_test2.jpg"
-    image_dir = "./test_images"
-    table_img_path_list = [
-        image_dir + "/" + imgname
-        for imgname in os.listdir(image_dir)
-        if os.path.splitext(imgname)[-1] in [".jpg"]
-    ]
-
-    t_class_init_start = time.time()
-    table_process = TableProcessModel(service_registry=registry)
-    print("model construct elapsed time ", time.time() - t_class_init_start)
-
-    # single_test ~3.5s
-    t_single_start = time.time()
-    table_process.run(table_img_path, action="a3_eval")
-    print("single test elapsed time ", time.time() - t_single_start)
-
-    # multi_test ~3s
-    # n = len(table_img_path_list)
-    # print("found {} images".format(n))
-    # t_multi_test = time.time()
-    # for img_path in table_img_path_list:
-    #     table_process.run(img_path, action="a4_eval")
-    # print(
-    #     "multi test elapsed time ",
-    #     time.time() - t_multi_test,
-    #     "mean time: ",
-    #     (time.time() - t_multi_test) / n,
-    # )

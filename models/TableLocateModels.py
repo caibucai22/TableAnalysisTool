@@ -110,7 +110,7 @@ class YoloLocate:
                 f"no.{i+1} xyxy:{boxs[i]} type: {names[int(cls[i])]}, conf:{conf[i]}"
             )
             # tensor to float
-        boxs = boxs[conf > 0.5] # filter < 0.5 table
+        boxs = boxs[conf > 0.5]  # filter < 0.5 table
         logger.info(f"filter {len(np.where(conf>0.5))} tables")
         roi_imgs = None
         return boxs, roi_imgs
@@ -119,30 +119,3 @@ class YoloLocate:
         bboxs, roi_imgs = self.parse(self.infer_(img=img))
         bboxs = sorted(bboxs, key=lambda x: (x[2] + x[0]) / 2 + (x[3] + x[1]) / 2)
         return bboxs, roi_imgs
-
-
-def test_yoloLocate():
-    model = YoloLocate()
-    # img_path = "C:/Users/001/Pictures/ocr/v2/right.jpg"
-    img_path = "C:/Users/001/Pictures/ocr/v2/locate_table_1.jpg"
-    save_dir, image_name = os.path.split(img_path)
-    image_basename, _ = os.path.splitext(image_name)
-    bboxs, _ = model.infer(img=img_path)
-    Utils.draw_locate(img_path, bboxs=bboxs, save_dir=save_dir, cut=True)
-
-
-def test_paddleLocate():
-    model = PaddleLocate()
-    img_path = "C:/Users/001/Pictures/ocr/v2/right.jpg"
-    save_dir, image_name = os.path.split(img_path)
-    bboxs, roi_imgs = model.infer(img_path)
-    print(f"total {len(bboxs)} tables")
-    Utils.draw_locate(
-        img_path, bboxs=bboxs, save_dir=save_dir, cut=True, adjust_ratio=0.0
-    )
-
-
-if __name__ == "__main__":
-    test_yoloLocate()
-    # test_paddleLocate()
-    pass
