@@ -7,7 +7,7 @@ app_dir:
     fonts:
 
 app_run:
-  use_device:
+  use_device: "cuda:0"
   support_cuda:
   support_cpu:
   support_image_exts:
@@ -21,6 +21,8 @@ app_models:
   yolo:
   tabletransformer:
   cycle_centernet:
+    v1:
+    v2:
 
 app_debug:
   cache: true

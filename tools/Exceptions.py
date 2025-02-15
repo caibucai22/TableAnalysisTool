@@ -51,4 +51,5 @@ class OnnxRuntimeError(Exception):
 if __name__ == "__main__":
     # raise BingoError("no bingo")
     # raise BingoError("all bingos")
-    raise OnnxRuntimeError("model do not exists")
+    # raise OnnxRuntimeError("model do not exists")
+    pass

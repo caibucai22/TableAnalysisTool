@@ -148,4 +148,5 @@ def test_a3split():
 
 if __name__ == "__main__":
     # test_rapid_undistort_prepocess()
-    test_a3split()
+    # test_a3split()
+    pass

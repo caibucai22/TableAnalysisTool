@@ -33,6 +33,6 @@ cache
 !README.md
 !README_en.md
 
-log.txt.*
+log.txt*
 
 *.egg-info

@@ -158,7 +158,7 @@ class A4ScoreEvaluation:
         min_val = int(score_range[0])
         max_val = int(score_range[-1])
         val_range = max_val - min_val + 1
-        increased = kwargs.get("increased",True)
+        increased = kwargs.get("increased", True)
 
         def direct_parse(idx, num):
             score_list_ = []
@@ -181,11 +181,13 @@ class A4ScoreEvaluation:
                     kwargs.get("row_i", "i"), score_list_
                 )
             )
-            if (increased == (score_list_[0]<score_list_[1])) or ((not increased) == (score_list_[0]> score_list_[1])):
+            if (increased == (score_list_[0] < score_list_[1])) or (
+                (not increased) == (score_list_[0] > score_list_[1])
+            ):
                 return score_list_
-                
+
             # return score_list_
-            return [num for num in range(min_val, max_val + 1)] # default increased
+            return [num for num in range(min_val, max_val + 1)]  # default increased
 
         if len(part_list) == 1:
             idx = part_list[0][0]
@@ -282,7 +284,7 @@ class A4ScoreEvaluation:
         ret_list = self.ocr_service.recognize_text([score_box])
         return ret_list[0]
 
-    def eval_line_score(self, line_score_boxs, **kwargs): # 5 19 24
+    def eval_line_score(self, line_score_boxs, **kwargs):  # 5 19 24
         n_ = len(line_score_boxs)
         line_rec_ret = []
         line_rec_confidence = []
@@ -445,7 +447,7 @@ class A4ScoreEvaluation:
         logger.info(f"record this score result to history")
         self.score_history.append(
             (
-                f"{self.cur_image_name}_score.xlsx",
+                self.xlsx_save_path, # 
                 (
                     sum(float(score) for no, score in self.row_scores)
                     if self.need_sum
@@ -470,7 +472,7 @@ class A4ScoreEvaluation:
             )
             return
         if app_config["app_run"]["print_line_result"]:
-            for _, (row_i,row_score) in enumerate(self.row_scores):
+            for _, (row_i, row_score) in enumerate(self.row_scores):
                 logger.info(f"row {row_i} ---> score: {row_score}")
         xlsx = pd.DataFrame(
             {
@@ -556,7 +558,11 @@ class A4ScoreEvaluation:
         self.cells = cells
         self.cur_image_name = image_name
         self.save_dir = save_dir
-        self.xlsx_save_path = f"{self.save_dir}/{self.cur_image_name}_{self.table_type.lower()[-10:]}_score.xlsx"
+        if self.table_type == "A4_SINGLE_TABLE":
+            self.xlsx_save_path = f"{self.save_dir}/{self.cur_image_name}_score.xlsx"
+
+        else:
+            self.xlsx_save_path = f"{self.save_dir}/{self.cur_image_name}_{self.table_type.lower()[-10:]}_score.xlsx"
 
         self.n_row = n_row
         self.n_col = n_col
