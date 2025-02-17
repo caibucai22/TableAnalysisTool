@@ -45,6 +45,7 @@ from ui.ImageDisplayWidget import ImageDisplayWidget
 import os
 import xlsxwriter, json  # 导入用于导出 Excel 的库，如果未安装请先安装：pip install xlsxwriter
 from ui.logger import logger
+from typing import Dict
 
 
 class ImageProcessApp(QMainWindow):
@@ -61,7 +62,9 @@ class ImageProcessApp(QMainWindow):
         self.create_menu_bar()
 
         # 创建工具栏
-        self.create_tool_bar()
+        self.tool_bar = self.create_tool_bar()
+        self.toolbar_actions = self.tool_bar.actions()
+        self.locked_actions = self.init_lock_action()
 
         # 创建图片列表
         self.files_dockwidget = QDockWidget("Files", self)
@@ -103,6 +106,7 @@ class ImageProcessApp(QMainWindow):
         self.current_idx = 0
         self.batch_mode: bool = False
         self.mode_mutex = QMutex()  # for batch_mode access for mutli-thread
+        self.actions_ = dict()  # store all actions
 
         # 日志输出区
         logger.add_gui_handler(self.log_text_edit)
@@ -113,15 +117,6 @@ class ImageProcessApp(QMainWindow):
         # thread
         self.thread_ = None
         self.worker = None
-
-        # self.load_model()
-
-    # --------------------------- get & set --------------------------
-    def is_batch_mode(self):
-        self.mode_mutex.lock()
-        mode = self.batch_mode
-        self.mode_mutex.unlock()
-        return mode
 
     def create_menu_bar(self):
         menu_bar = self.menuBar()
@@ -164,20 +159,6 @@ class ImageProcessApp(QMainWindow):
         license_action.triggered.connect(self.show_license)
         info_action.triggered.connect(self.show_info)
 
-    def show_license(self):
-        # 这里可以打开一个新窗口或者对话框显示软件授权信息
-        license_text = "This is the software license information."
-        QMessageBox.information(self, "license", license_text)
-        self.log_text_edit.setText(license_text)  # 使用日志区域显示信息
-
-    def show_info(self):
-        # 这里可以打开一个新窗口或者对话框显示软件信息
-        info_text = (
-            "Software Name: Image Processing App\nVersion: 1.0\nAuthor: Your Name"
-        )
-        QMessageBox.information(self, "info", info_text)
-        self.log_text_edit.setText(info_text)  # 使用日志区域显示信息
-
     def create_tool_bar(self):
         tool_bar = QToolBar("Main ToolBar", self)
         # tool_bar.resize(143,333)
@@ -189,6 +170,7 @@ class ImageProcessApp(QMainWindow):
         open_file_action = QAction(
             QIcon(self.icons_dir + "/open_file.png"), "open one table image", self
         )
+        open_file_action.setObjectName("openFileAction")
         tool_bar.addAction(open_file_action)
 
         open_dir_action = QAction(
@@ -196,6 +178,7 @@ class ImageProcessApp(QMainWindow):
             "open a dir contains table images",
             self,
         )
+        open_dir_action.setObjectName("openDirAction")
         tool_bar.addAction(open_dir_action)
 
         tool_bar.addSeparator()
@@ -203,6 +186,7 @@ class ImageProcessApp(QMainWindow):
         locate_table_action = QAction(
             QIcon(self.icons_dir + "/table_locate.png"), "locate tables on images", self
         )
+        locate_table_action.setObjectName("locateTableAction")
         tool_bar.addAction(locate_table_action)
 
         # 添加表格结构按钮
@@ -211,12 +195,14 @@ class ImageProcessApp(QMainWindow):
             "split tables' structure",
             self,
         )
+        structure_table_action.setObjectName("structureTableAction")
         tool_bar.addAction(structure_table_action)
 
         # 添加表格识别按钮
         recognize_table_action = QAction(
             QIcon(self.icons_dir + "/table_rec.png"), "recognize table content", self
         )
+        recognize_table_action.setObjectName("recognizeTableAction")
         tool_bar.addAction(recognize_table_action)
         tool_bar.addSeparator()
 
@@ -224,6 +210,7 @@ class ImageProcessApp(QMainWindow):
         process_a4_action = QAction(
             QIcon(self.icons_dir + "/a4_eval3.png"), "处理A4单表问卷照片", self
         )
+        process_a4_action.setObjectName("a4EvalAction")
         tool_bar.addAction(process_a4_action)
         tool_bar.addSeparator()
 
@@ -231,11 +218,13 @@ class ImageProcessApp(QMainWindow):
         split_a3_action = QAction(
             QIcon(self.icons_dir + "/a3_split3.png"), "切分单张A3问卷", self
         )
+        split_a3_action.setObjectName("a3SplitAction")
         tool_bar.addAction(split_a3_action)
 
         process_a3_action = QAction(
             QIcon(self.icons_dir + "/a3_eval3.png"), "处理A3多表问卷照片", self
         )
+        process_a3_action.setObjectName("a3EvalAction")
         tool_bar.addAction(process_a3_action)
         tool_bar.addSeparator()
 
@@ -243,6 +232,7 @@ class ImageProcessApp(QMainWindow):
         clear_action = QAction(
             QIcon(self.icons_dir + "/clear_queue.png"), "清空图像队列", self
         )
+        clear_action.setObjectName("clearQueueAction")
         tool_bar.addAction(clear_action)
 
         tool_bar.addSeparator()
@@ -253,6 +243,7 @@ class ImageProcessApp(QMainWindow):
             "打开当前图像处理结果excel",
             self,
         )
+        one_img_excel_action.setObjectName("oneImgExcelAtion")
         tool_bar.addAction(one_img_excel_action)
 
         history_excel_action = QAction(
@@ -260,6 +251,7 @@ class ImageProcessApp(QMainWindow):
             "打开此次执行图像处理统计历史excel",
             self,
         )
+        history_excel_action.setObjectName("historyExcelAtion")
         tool_bar.addAction(history_excel_action)
 
         # 绑定按钮的槽函数
@@ -298,6 +290,45 @@ class ImageProcessApp(QMainWindow):
 
         tool_bar.addWidget(mode_widget)
         self.mode_combo.currentIndexChanged.connect(self.mode_changed)
+
+        return tool_bar
+
+    def init_lock_action(self) -> Dict[str, QAction]:
+        custom_action = [
+            "openFileAction",
+            "openDirAction",
+            "locateTableAction",
+            "structureTableAction",
+            "recognizeTableAction",
+            "a4EvalAction",
+            "a3SplitAction",
+            "a3EvalAction",
+            "clearQueueAction",
+            "oneImgExcelAtion",
+            "historyExcelAtion",
+        ]
+        short_des = [
+            "open_file",
+            "open_dir",
+            "locate",
+            "structure",
+            "rec",
+            "a4_eval",
+            "a3_split",
+            "a3_eval",
+            "clear_queue",
+            "export_open_excel",
+            "export_open_hisotry",
+        ]
+        locked_offset = 2
+        locked_idx = 0
+        des_action_dict = {}
+        for action in self.toolbar_actions:
+            if action.objectName() in custom_action[locked_offset:]:
+                action.setDisabled(True)
+                des_action_dict[short_des[locked_offset + locked_idx]] = action
+                locked_idx += 1
+        return des_action_dict
 
     def create_property_widget(self):
         properties_dockwidget = QDockWidget(
@@ -340,9 +371,11 @@ class ImageProcessApp(QMainWindow):
         )  # 设置setObjectName，方便后续样式表或查找
         table_location_layout = QVBoxLayout()  # 使用垂直布局，因为 bbox 信息可能较长
 
+        self.table_num_label = QLabel("定位到 n 张表格")
         self.table_bbox_label = QLabel(
             "定位表格 \n\n BBox1 [] \n BBox2 [] \n BBox3 []"
         )  # 使用 self.xxx 方便后续更新数值
+        table_location_layout.addWidget(self.table_num_label)
         table_location_layout.addWidget(self.table_bbox_label)
         table_location_groupbox.setLayout(table_location_layout)
         main_layout.addWidget(table_location_groupbox)
@@ -427,7 +460,11 @@ class ImageProcessApp(QMainWindow):
             self.image_paths = [file_path]
             self.image_display_widget.set_image_paths(self.image_paths)
             self.image_list.setCurrentRow(self.current_idx)
-
+            # enable action
+            enable_action_des = ["a4_eval", "a3_split", "a3_eval", "clear_queue"]
+            for des, action in self.locked_actions.items():
+                if des in enable_action_des:
+                    action.setEnabled(True)
             # update status button
             self.set_status_button_state("处理")
 
@@ -448,16 +485,15 @@ class ImageProcessApp(QMainWindow):
                 if self.image_paths:
                     self.image_display_widget.set_image_paths(self.image_paths)
                     self.image_list.setCurrentRow(self.current_idx)
+            # enable action
+            enable_action_des = ["locate", "a4_eval", "a3_split", "a3_eval"]
+            for des, action in self.locked_actions.items():
+                if des in enable_action_des:
+                    action.setEnabled(True)
             # update status button
             self.set_status_button_state("处理")
         else:
             QMessageBox.information(self, "error", "文件夹打开失败")
-
-    def on_image_clicked(self, item):
-        self.current_idx = self.image_list.row(item)
-        self.image_display_widget.set_current_index(self.current_idx)
-        self.image_list.setCurrentRow(self.current_idx)
-        logger.info(f"current image: {self.image_paths[self.current_idx]}")
 
     def locate_table(self):
         self.status_bar.showMessage("Locating table...")
@@ -510,6 +546,8 @@ class ImageProcessApp(QMainWindow):
         self.image_list.clear()
         # 清除图像显示窗口 当前显示图像 以及 set_image_paths 为 []
         self.image_display_widget.set_image_paths([])  # 内部已处理
+        # lock action
+        self.init_lock_action()
         # 图像处理按钮 显示区状态 设置为 preparing
 
         self.set_status_button_state("准备")
@@ -518,6 +556,12 @@ class ImageProcessApp(QMainWindow):
     # --------------------- 其他 与图片处理相关的 后处理事件 ----------------
     def load_model(self):
         self.status_bar.showMessage("loading model ...")
+
+    def on_image_clicked(self, item):
+        self.current_idx = self.image_list.row(item)
+        self.image_display_widget.set_current_index(self.current_idx)
+        self.image_list.setCurrentRow(self.current_idx)
+        logger.info(f"current image: {self.image_paths[self.current_idx]}")
 
     def process_one_image(self):
         """仅处理当前选中的图片"""
@@ -811,6 +855,26 @@ class ImageProcessApp(QMainWindow):
                 )
             return False
         return True
+
+    def is_batch_mode(self):
+        self.mode_mutex.lock()
+        mode = self.batch_mode
+        self.mode_mutex.unlock()
+        return mode
+
+    def show_license(self):
+        # 这里可以打开一个新窗口或者对话框显示软件授权信息
+        license_text = "This is the software license information."
+        QMessageBox.information(self, "license", license_text)
+        self.log_text_edit.setText(license_text)  # 使用日志区域显示信息
+
+    def show_info(self):
+        # 这里可以打开一个新窗口或者对话框显示软件信息
+        info_text = (
+            "Software Name: Image Processing App\nVersion: 1.0\nAuthor: Your Name"
+        )
+        QMessageBox.information(self, "info", info_text)
+        self.log_text_edit.setText(info_text)  # 使用日志区域显示信息
 
 
 # if __name__ == "__main__":
