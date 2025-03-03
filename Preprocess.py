@@ -76,7 +76,7 @@ class A3Split:
     @staticmethod
     def split(img_path, original_shape, **kwargs):
         """
-        original_shape : should be return by Image.shape -> width ,height
+        original_shape : should be return by Image.shape -> width ,height rows->h cols->w
         """
         save_dir, image_name = osp.split(img_path)
         if kwargs.get("save_dir") is not None:
@@ -86,13 +86,19 @@ class A3Split:
 
         # 获取图像尺寸
         height, width, channels = img.shape
-        # print("original shape", original_shape)
-        # print("undistort shape", img.shape)
+        print("original shape", original_shape)
+        print("undistort shape", img.shape)
 
         if len(img.shape) == len(original_shape):
             vertical = img.shape == original_shape
         else:
             vertical = (height == original_shape[1]) and (width == original_shape[0])
+
+        print((height / width), (width / height))
+        if height / width > width / height:
+            vertical = False
+        else:
+            vertical = True
         half = None
         other_half = None
         if vertical:
@@ -114,9 +120,9 @@ class A3Split:
             half = cv2.flip(cv2.transpose(up_half), 0)
             other_half = cv2.flip(cv2.transpose(down_half), 0)
             rotated_img = cv2.flip(cv2.transpose(img), 0)
-            cv2.imencode(".jpg", rotated_img)[1].tofile(
-                save_dir + "/" + f"fix_{image_basename}.jpg"
-            )
+            # cv2.imencode(".jpg", rotated_img)[1].tofile(
+            #     save_dir + "/" + f"fix_{image_basename}.jpg"
+            # )
 
         # 保存分割后的图像
         left_half_path = save_dir + "/" + f"{image_basename}_left_half.jpg"
