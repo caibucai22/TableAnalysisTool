@@ -1,5 +1,7 @@
+import os.path
+
 from ui.app_ui import ImageProcessApp
-import sys
+import sys, glob
 from PyQt5.QtCore import Qt, QThread, QTimer, QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import (
     QApplication,
@@ -12,20 +14,18 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QMessageBox,
     QSizePolicy,
+    QAction,
 )
+from PyQt5.QtGui import QIcon
 from models.TableProcessModel_v2 import TableProcessModel
 from Workers import ModelLoadWorker, ImageProcessWorker
 from ui.logger import logger
+from ui.path_select_dialog import PathSelectDialog
 from tools.Utils import *
+from config import load_config
 
-
-class ProcessContext:
-    def __init__(self) -> None:
-        """对每一个图像的执行上下文进行保存"""
-        self.action_chains = dict()
-        self.action_state = dict()
-        self.action_results = dict()
-        pass
+app_config = load_config("config.yaml")
+import pandas as pd
 
 
 class TableAnalysisTool(ImageProcessApp):
@@ -33,11 +33,20 @@ class TableAnalysisTool(ImageProcessApp):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("TableAnalysisTool")
+        self.setWindowIcon(QIcon(self.icons_dir + "app_64x64.png"))
         self.model: TableProcessModel = None
         self.thread_ = None
         self.worker = None
         self.load_model()
         self.action = None
+        self.tool_bar.addSeparator()
+        associate_action = QAction(
+            QIcon(self.icons_dir + "/associate.png"), "关联人员信息", self
+        )
+        self.person_info_select_dialog = PathSelectDialog(self)
+        associate_action.triggered.connect(self.person_info_select_dialog.show)
+        self.person_info_select_dialog.path_selected.connect(self.associate_person_info)
+        self.tool_bar.addAction(associate_action)
 
     def setup_action(self, action):
         logger.info(f"Starting action: {action}")
@@ -74,15 +83,16 @@ class TableAnalysisTool(ImageProcessApp):
                 self.model,
                 action=action,
             )
-        self.thread_ = QThread() # QThread: Destroyed while thread is still running
+        self.thread_ = QThread()  # QThread: Destroyed while thread is still running
         self.worker.moveToThread(self.thread_)
 
         # clean old connect
         # 在连接新信号前断开旧连接
 
         try:
-            self.worker.show_next_signal.disconnect()
-            self.worker.finished.disconnect()
+            # self.worker.show_next_signal.disconnect()
+            # self.worker.finished.disconnect()
+            pass
         except TypeError:
             logger.error(f"worker fail to clean old connect", exc_info=True)
 
@@ -126,8 +136,8 @@ class TableAnalysisTool(ImageProcessApp):
             self.setup_action("locate")
             self.thread_.start()
             # 更新按钮状态
-        except Exception:
-            logger.info("locate fail")
+        except Exception as e:
+            logger.error(f"locate fail, {e}", exc_info=True, stack_info=True)
             self.set_status_button_state("处理")
 
     def structure_table(self):
@@ -136,9 +146,9 @@ class TableAnalysisTool(ImageProcessApp):
             self.setup_action("structure")
             self.thread_.start()
             # 更新按钮状态
-        except Exception:
-            logger.info("structure fail")
+        except Exception as e:
             self.set_status_button_state("处理")
+            logger.error(f"structure fail {e}", exc_info=True, stack_info=True)
 
     def recognize_table(self):
         super().recognize_table()
@@ -146,9 +156,9 @@ class TableAnalysisTool(ImageProcessApp):
             self.setup_action("ocr")
             self.thread_.start()
             # 更新按钮状态
-        except Exception:
-            logger.info("recognize fail")
+        except Exception as e:
             self.set_status_button_state("处理")
+            logger.error(f"recognize fail, {e}", exc_info=True, stack_info=True)
 
     def process_a4(self):
         super().process_a4()
@@ -157,11 +167,12 @@ class TableAnalysisTool(ImageProcessApp):
             self.thread_.start()
             # 更新按钮状态
         except Exception as e:
-            logger.info(f"a4_eval fail, {e}")
+
             if self.check_images_loaded(info=False):
                 self.set_status_button_state("处理")
             else:
                 self.set_status_button_state("准备")
+            logger.error(f"a4_eval fail, {e}", exc_info=True, stack_info=True)
 
     def split_a3(self):
         super().split_a3()
@@ -170,11 +181,12 @@ class TableAnalysisTool(ImageProcessApp):
             self.thread_.start()
             # 更新按钮状态
         except Exception as e:
-            logger.info(f"a3_split fail, {e}")
             if self.check_images_loaded(info=False):
                 self.set_status_button_state("处理")
             else:
                 self.set_status_button_state("准备")
+            logger.error(f"a3_split fail, {e}", exc_info=True, stack_info=True)
+            
 
     def process_a3(self):
         try:
@@ -183,16 +195,32 @@ class TableAnalysisTool(ImageProcessApp):
             self.thread_.start()
             # 更新按钮状态
         except Exception as e:
-            logger.info(f"a3_eval fail, {e}")
             if self.check_images_loaded(info=False):
                 self.set_status_button_state("处理")
             else:
                 self.set_status_button_state("准备")
+            
+            logger.error(f"a3_eval fail, {e}", exc_info=True, stack_info=True)
+            
+
+    def process_a3_back(self):
+        try:
+            super().process_a3()
+            self.setup_action("a3_eval_back")
+            self.thread_.start()
+            # 更新按钮状态
+        except Exception as e:
+            if self.check_images_loaded(info=False):
+                self.set_status_button_state("处理")
+            else:
+                self.set_status_button_state("准备")
+            logger.error(f"a3_eval_back fail, {e}", exc_info=True, stack_info=True)
+            
 
     def export_and_open_excel(self):
         super().export_and_open_excel()
         # 默认保存 提供路径打开文件夹即可
-        open_folder()
+        open_folder(app_config["app_dir"]["base_output_dir"])
 
     def export_and_open_history(self):
         super().export_and_open_history()
@@ -201,11 +229,32 @@ class TableAnalysisTool(ImageProcessApp):
         # 如果没有保存 if
         self.model.a4table_score_eval_service.score_history_to_xlsx()
 
-    # def process_one_image(self):
-    #     super().process_one_image()
 
-    # def process_images(self):
-    #     super().process_images()
+    def associate_person_info(self, person_and_back_work_dir: dict):
+        """
+        正面自动关联
+        关联信息 A3_LEFT_NO_1 A3_RIGHT_NO_1 A3_RIGHT_NO_2 A3_RIGHT_NO_3
+        person_info.xlsx
+        反面 需要提供 person_info.xlsx 路径 和 反面 工作文件夹路径 才能关联
+        """
+        reply = QMessageBox.question(
+            self,
+            "重要提示",
+            "请检查导出人员姓名等重要信息是否有误，如有问题取消操作，手动修改后再关联",
+            QMessageBox.Ok | QMessageBox.Cancel,
+        )
+        if reply == QMessageBox.Cancel:
+            return
+        person_info_xlsx = person_and_back_work_dir["xlsx"]
+        back_working_dir = person_and_back_work_dir["folder"]
+        associate_back = person_and_back_work_dir["associate_back"]
+
+        # 正/反面 都可更新
+        self.model.associate(
+            person_info_xlsx, back_working_dir, associate_back=associate_back
+        )
+
+        QMessageBox.information(self, "info", "关联完成")
 
     # slot funcs
     @pyqtSlot(object)
@@ -215,7 +264,6 @@ class TableAnalysisTool(ImageProcessApp):
         self.thread_.quit()
         logger.debug("thread is quitting")
         self.thread_.wait(1000)
-
 
     def on_located(self):
         pass
@@ -251,12 +299,16 @@ class TableAnalysisTool(ImageProcessApp):
         # self.thread_.wait()
         self.thread_.deleteLater()
 
-
-        if self.action in ["a3_eval", "a4_eval"]:
+        if self.action in ["a3_eval", "a4_eval", "a3_eval_back"]:
             # 导出统计
             self.model.a4table_score_eval_service.score_history_to_xlsx()
+            self.model.a4table_score_eval_service.action_score_hisory_to_xlsx()
+            if self.action == "a3_eval": # 正面 export person info and associate
+                self.model.export_peroson_info()
+                self.model.person_infos.clear()
             # 清理模型统计得分历史
             self.model.a4table_score_eval_service.score_history.clear()
+            self.model.a4table_score_eval_service.action_xlsx_history.clear()
         # 启用按钮
         self.set_status_button_state("处理")
         # 向用户确认是否需要清理队列
