@@ -1,10 +1,11 @@
 app_dir:
-  base_output_dir: "E:/my-github-repos/01-my_repos/base_output" # 默认是图像文件所在文件夹
+  base_output_dir: "D:/TableAnalysisTool_output" # 默认是图像文件所在文件夹
+  enable_time_dir: true
   sub_cache_dir: "cache" # 缓存文件夹
   models_dir:
   log_file_dir:
   resources_dir:
-    fonts:
+    font: "resources/simfang.ttf"
 
 app_run:
   use_device: "cuda:0"
@@ -25,6 +26,9 @@ app_models:
     v2:
 
 app_debug:
-  cache: true
-  cut_table_cells: true
+  debug: true
+  cache: false
+  cut_table_cells: false
+  draw_cell: true
+  no_bingo_cut: false
   

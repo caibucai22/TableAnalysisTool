@@ -51,6 +51,8 @@ PADDLE_OCR_LAYOUT_MODEL_DIR = ""
 BINGO_CLS_MODEL_PATH = "E:/Models/ultralytics-8.1.0/train_bingo/bingo-cls3/n-base/weights/bingo_v3.onnx"
 
 # wired
+# WIRED_TABLE_STRUCTURE_MODEL_PATH = "D:/dev/miniconda3/envs/paddle/Lib/site-packages/wired_table_rec/models/cycle_center_net_v1.onnx"
+# WIRED_TABLE_STRUCTURE_MODEL_V2_PATH = "D:/dev/miniconda3/envs/paddle/Lib/site-packages/wired_table_rec/models/cycle_center_net_v2.onnx"
 WIRED_TABLE_STRUCTURE_MODEL_PATH = "E:/Anaconda3/envs/paddle/Lib/site-packages/wired_table_rec-1.1.9-py3.8.egg/wired_table_rec/models/cycle_center_net_v1.onnx"
 WIRED_TABLE_STRUCTURE_MODEL_V2_PATH = "E:/Anaconda3/envs/paddle/Lib/site-packages/wired_table_rec-1.1.9-py3.8.egg/wired_table_rec/models/cycle_center_net_v2.onnx"
 

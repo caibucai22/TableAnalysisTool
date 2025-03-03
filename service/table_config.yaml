@@ -78,4 +78,34 @@ A3:
       gt_names: ["姓名","学籍号"]
       gt_cells: [[]]
       gt_cell_idxs: [2,12]
+      name_len: 18
+
+  back_no_2_table:
+    type: "wired"
+    cols: 6
+    rows: 21
+    locate_model: "table-transformer"
+    eval_type: "line" # line cell
+    eval:
+      start_col_idx: 2
+      end_col_idx: 5
+      header: ["没有或者很少有","有时有","大部分时间（经常有）","绝大数时间有"]
+      score_type: "1234"
+      exist_reverse: true
+      need_sum: true
+  
+  back_no_3_table:
+    type: "wired"
+    cols: 6
+    rows: 21
+    locate_model: "table-transformer"
+    eval_type: "line" # line cell
+    eval:
+      start_col_idx: 2
+      end_col_idx: 5
+      header: ["没有或者很少有","有时有","大部分时间（经常有）","绝大数时间有"]
+      score_type: "1234"
+      exist_reverse: true
+      need_sum: true
+
 
