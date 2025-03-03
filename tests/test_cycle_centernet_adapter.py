@@ -11,7 +11,7 @@ def test_cycle_center_net_adapter():
     model = WiredTableStructureModel()
 
     # image_path = "./test_images/table1.jpg"
-    image_path = "C:/Users/001/Pictures/ocr/v2/locate_table_4.jpg"
+    image_path = "C:/Users/001/Pictures/ocr/v2/locate_table_4_2.jpg"
     save_dir, image_name = os.path.split(image_path)
     img = img_load_by_Image(image_path)
     img = img_convert_to_bgr(np.array(img))
