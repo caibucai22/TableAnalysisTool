@@ -28,6 +28,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QGroupBox,
     QComboBox,
+    QDialog
 )
 from PyQt5.QtGui import (
     QIcon,
@@ -104,7 +105,7 @@ class ImageProcessApp(QMainWindow):
         # logic
         self.image_paths = []
         self.current_idx = 0
-        self.batch_mode: bool = False
+        self.batch_mode: bool = True
         self.mode_mutex = QMutex()  # for batch_mode access for mutli-thread
         self.actions_ = dict()  # store all actions
 
@@ -222,10 +223,16 @@ class ImageProcessApp(QMainWindow):
         tool_bar.addAction(split_a3_action)
 
         process_a3_action = QAction(
-            QIcon(self.icons_dir + "/a3_eval3.png"), "处理A3多表问卷照片", self
+            QIcon(self.icons_dir + "/a3_eval3.png"), "处理A3正面多表问卷照片", self
         )
         process_a3_action.setObjectName("a3EvalAction")
         tool_bar.addAction(process_a3_action)
+
+        process_a3_back_action = QAction(
+            QIcon(self.icons_dir + "/a3_eval_back.png"), "处理A3反面多表问卷照片", self
+        )
+        process_a3_back_action.setObjectName("a3EvalBackAction")
+        tool_bar.addAction(process_a3_back_action)
         tool_bar.addSeparator()
 
         # 添加清除按钮
@@ -265,6 +272,7 @@ class ImageProcessApp(QMainWindow):
         process_a4_action.triggered.connect(self.process_a4)
         split_a3_action.triggered.connect(self.split_a3)
         process_a3_action.triggered.connect(self.process_a3)
+        process_a3_back_action.triggered.connect(self.process_a3_back)
 
         clear_action.triggered.connect(self.clear_queue)
 
@@ -282,7 +290,7 @@ class ImageProcessApp(QMainWindow):
         self.mode_combo.setBaseSize(40, 36)
         self.mode_combo.addItem("single")  # 添加 "单张模式" 选项
         self.mode_combo.addItem("batch")  # 添加 "批量模式" 选项
-        self.mode_combo.setCurrentIndex(0)  # 索引 0 对应 "单张模式"
+        self.mode_combo.setCurrentIndex(1)  # 索引 0 对应 "单张模式"
         # tool_bar.addWidget(self.mode_combo)
         mode_layout.addWidget(mode_label)
         mode_layout.addWidget(self.mode_combo)
@@ -303,6 +311,7 @@ class ImageProcessApp(QMainWindow):
             "a4EvalAction",
             "a3SplitAction",
             "a3EvalAction",
+            "a3EvalBackAction",
             "clearQueueAction",
             "oneImgExcelAtion",
             "historyExcelAtion",
@@ -316,6 +325,7 @@ class ImageProcessApp(QMainWindow):
             "a4_eval",
             "a3_split",
             "a3_eval",
+            "a3_eval_back",
             "clear_queue",
             "export_open_excel",
             "export_open_hisotry",
@@ -453,6 +463,8 @@ class ImageProcessApp(QMainWindow):
             self, "Open Image File", "", "Image Files (*.png *.jpg *.jpeg)"
         )
         if file_path:
+            self.image_list.clear()
+            self.image_paths.clear()
             logger.info(f"open file {file_path}")
             self.image_list.clear()
             # 将选中的文件添加到图片列表
@@ -461,7 +473,14 @@ class ImageProcessApp(QMainWindow):
             self.image_display_widget.set_image_paths(self.image_paths)
             self.image_list.setCurrentRow(self.current_idx)
             # enable action
-            enable_action_des = ["a4_eval", "a3_split", "a3_eval", "clear_queue"]
+            enable_action_des = [
+                "a4_eval",
+                "a3_split",
+                "a3_eval",
+                "a3_eval_back",
+                "clear_queue",
+                "export_open_excel",
+            ]
             for des, action in self.locked_actions.items():
                 if des in enable_action_des:
                     action.setEnabled(True)
@@ -475,6 +494,7 @@ class ImageProcessApp(QMainWindow):
             logger.info(f"open folder {folder_path}")
             # 清空当前图片列表
             self.image_list.clear()
+            self.image_paths.clear()
             # 遍历文件夹中的所有文件
             for file_name in os.listdir(folder_path):
                 file_path = os.path.join(folder_path, file_name)
@@ -486,7 +506,14 @@ class ImageProcessApp(QMainWindow):
                     self.image_display_widget.set_image_paths(self.image_paths)
                     self.image_list.setCurrentRow(self.current_idx)
             # enable action
-            enable_action_des = ["locate", "a4_eval", "a3_split", "a3_eval"]
+            enable_action_des = [
+                "a4_eval",
+                "a3_split",
+                "a3_eval",
+                "a3_eval_back",
+                "clear_queue",
+                "export_open_excel",
+            ]
             for des, action in self.locked_actions.items():
                 if des in enable_action_des:
                     action.setEnabled(True)
@@ -514,6 +541,10 @@ class ImageProcessApp(QMainWindow):
         # for i in range(100000):
         #     logger.info(i)
         # self.set_status_button_state("处理")
+
+    def process_a3_back(self):
+        self.status_bar.showMessage("Processing A3 back page...")
+        self.set_status_button_state("处理中")
 
     def split_a3(self):
         self.status_bar.showMessage("Splitting A3 page...")

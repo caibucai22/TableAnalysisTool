@@ -311,8 +311,8 @@ class ImageDisplayWidget(QWidget):
                 # logger.info(f"scale_factor is {self.image_scaler.current_scale}")
                 self.update_display()
                 # logger.info("scale to fit display")
-            except:
-                logger.error("load image failed")
+            except Exception as e:
+                logger.error(f"load image failed {e}", exc_info=True, stack_info=True)
         else:
             self.image_label.clear()
             # self.status_label.setText("No more images")
