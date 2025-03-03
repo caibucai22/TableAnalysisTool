@@ -15,6 +15,7 @@ class TableEntity:
             row_bbox_list,
             col_bbox_list,
             cell_bbox_list,
+            cell_conf_list = None,
             type="wired",
             skip_table_head=True,
     ) -> None:
@@ -29,6 +30,7 @@ class TableEntity:
         self.row_bbox_list = row_bbox_list
         self.col_bbox_list = col_bbox_list
         self.cell_bbox_list = cell_bbox_list
+        self.cell_conf_list = cell_conf_list
         self.skip_table_head = skip_table_head  # for filter first row cell
         self.cell_ocr_list = []
 

@@ -14,6 +14,6 @@ class CycleCenterNetService(ITableStructureService):
         )
         self.adapter = CycleCenterNetAdapter()
 
-    def recognize_structure(self, table_image: Any) -> TableEntity:
-        polygons, logits = self.model(table_image)
-        return self.adapter.adapt({"sorted_polygons": polygons})
+    def recognize_structure(self, table_image: Any,**kwargs) -> TableEntity:
+        polygons, logits = self.model(table_image) # img 是 cv2 格式
+        return self.adapter.adapt({"sorted_polygons": polygons, "logits": logits},img=table_image,**kwargs)

@@ -11,6 +11,6 @@ class TableTransformerService(ITableStructureService):
         self.model = TableTransformer()
         self.adapter = TableTransformerAdapter()
 
-    def recognize_structure(self, table_image: Any) -> TableEntity:
+    def recognize_structure(self, table_image: Any,**kwargs) -> TableEntity:
         result_dict = self.model.infer(table_image)
-        return self.adapter.adapt(result_dict)
+        return self.adapter.adapt(result_dict,**kwargs)
