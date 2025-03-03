@@ -13,7 +13,7 @@ class ITableLocateService(ABC):
 
 class ITableStructureService(ABC):
     @abstractmethod
-    def recognize_structure(self, table_image: np.ndarray) -> TableEntity:
+    def recognize_structure(self, table_image: np.ndarray, **kwargs) -> TableEntity:
         """输入表格图像，返回结构化数据（如 TableEntity 对象）"""
         pass
 

@@ -64,8 +64,11 @@ class ModelManager:
                         config = self._configs[model_name]
                         self._models[model_name] = loader(**config)
                     except Exception as e:
-                        logger.error(f"Failed to load model {model_name}: {str(e)}")
-                        raise
+                        logger.error(
+                            f"Failed to load model {model_name}: {str(e)}",
+                            exc_info=True,
+                            stack_info=True,
+                        )
 
         return self._models[model_name]
 
@@ -181,7 +184,7 @@ model_manger.register_model(
     model_name="yolo_locate",
     loader=lambda **kwargs: YOLO(**kwargs),
     config={
-        "model": "E:/my-github-repos/01-my_repos/TableAnalysisTool/hf_models/yolov8m_table_detection.pt"
+        "model": "./hf_models/yolov8m_table_detection.pt"
     },
 )
 

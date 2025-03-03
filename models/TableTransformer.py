@@ -45,7 +45,7 @@ class TableTransformer:
             outputs, threshold=0.85, target_sizes=target_sizes
         )[
             0
-        ]  # fix threshold=0.85 hyper-parameters
+        ]  # fix threshold=0.65 hyper-parameters 0.65 A3 0.85 A4
         del encoding
         return results
 
