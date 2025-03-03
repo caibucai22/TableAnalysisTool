@@ -73,7 +73,7 @@ class PaddleLocate:
             for i in range(len(bboxs)):
                 logger.info(f"no.{i+1} xyxy:{bboxs[i]}")
         except Exception as e:
-            logger.error("locate table infer failed", exc_info=True)
+            logger.error("locate table infer failed", exc_info=True,stack_info=True)
             return [], []
         return bboxs, roi_imgs
 

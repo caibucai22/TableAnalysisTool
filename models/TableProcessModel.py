@@ -173,7 +173,7 @@ class TableProcessModel:
             self.a4_table_score_eval.eval_score()
             self.a4_table_score_eval.to_xlsx()
         except Exception as e:
-            logger(f"run error {e}")
+            logger(f"run error {e}",exc_info=True,stack_info=True)
             # self.score_eval.eval_score(process_failure=True)
             # self.score_eval.to_xlsx(process_failure=True)
             self.a4_table_score_eval.eval_score(process_failure=True)
