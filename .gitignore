@@ -23,7 +23,8 @@ cache
 **/*.pyc
 !test_images/*
 !table.jpg
-!resources/** 
+!resources/**
+!ui/resources/**
 #
 *.html
 *.xlsx
