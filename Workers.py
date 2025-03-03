@@ -4,7 +4,7 @@ import time
 # from models.TableProcessModel import TableProcessModel
 from models.TableProcessModel_v2 import TableProcessModel
 from service.registry import registry
-import logging
+import logging, datetime
 from tools.Logger import get_logger
 
 logger = get_logger(__file__, log_level=logging.INFO)
@@ -23,7 +23,7 @@ class ModelLoadWorker(QObject):
             self.model = TableProcessModel(service_registry=registry)
             self.model_loaded.emit(self.model)
         except Exception as e:
-            logger.error(f"loading model {e}")
+            logger.error(f"loading model {e}",exc_info=True,stack_info=True)
         finally:
             self.finished.emit()
 
@@ -43,12 +43,13 @@ class ImageProcessWorker(QObject):
 
     @pyqtSlot()
     def run(self):
+        cur_time = datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S")
         try:
             for i, image_path in enumerate(self.images):
                 # 处理图片
                 if self.log:
                     logger.info(f"processing {image_path}")
-                self.processor.run(image_path, action=self.action)
+                self.processor.run(image_path, action=self.action, cur_time=cur_time)
                 if self.log:
                     logger.info(f"process {image_path} done")
                 time.sleep(0.5)
@@ -57,6 +58,6 @@ class ImageProcessWorker(QObject):
             self.all_image_processed.emit("all done!")
         except Exception as e:
             self.one_image_processed.emit(f"Error processing {image_path}: {str(e)}")
-            logger.error(f"Worker process failed {image_path}", exc_info=True)
+            logger.error(f"Worker process failed {image_path}", exc_info=True,stack_info=True)
         finally:
             self.finished.emit()  # 处理完成 finally keep finished signal must emit

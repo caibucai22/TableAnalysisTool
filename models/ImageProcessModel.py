@@ -78,15 +78,16 @@ class ImageProcessModel:
         )
         self.cur_image_name = os.path.basename(self.image_path).split(".")[0]
         self.cache_dir = self.cur_image_dir + "/" + self.cache_base_dir
-        os.makedirs(self.cache_dir, exist_ok=True)
-        self.initialize_cache_dir()
+        # os.makedirs(self.cache_dir, exist_ok=True) # call once in initialize_cache_dir
+        # self.initialize_cache_dir()
         logger.info(f"base output dir {self.cur_image_dir}")
         logger.info(f"sub cache dir {self.cache_dir}")
-        logger.info(f"current img cache dir {self.each_image_cache_dir}")
+        
 
     def initialize_cache_dir(self):
         self.each_image_cache_dir = self.cache_dir + "/" + self.cur_image_name
         os.makedirs(self.each_image_cache_dir, exist_ok=True)
+        logger.info(f"current img cache dir {self.each_image_cache_dir}")
 
     def reset_results(self):
         pass
