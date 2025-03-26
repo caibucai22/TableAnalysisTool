@@ -39,14 +39,14 @@ class TableAnalysisTool(ImageProcessApp):
         self.worker = None
         self.load_model()
         self.action = None
-        self.tool_bar.addSeparator()
-        associate_action = QAction(
-            QIcon(self.icons_dir + "/associate.png"), "关联人员信息", self
-        )
-        self.person_info_select_dialog = PathSelectDialog(self)
-        associate_action.triggered.connect(self.person_info_select_dialog.show)
-        self.person_info_select_dialog.path_selected.connect(self.associate_person_info)
-        self.tool_bar.addAction(associate_action)
+        # self.tool_bar.addSeparator()
+        # associate_action = QAction(
+        #     QIcon(self.icons_dir + "/associate.png"), "关联人员信息", self
+        # )
+        # self.person_info_select_dialog = PathSelectDialog(self)
+        # associate_action.triggered.connect(self.person_info_select_dialog.show)
+        # self.person_info_select_dialog.path_selected.connect(self.associate_person_info)
+        # self.tool_bar.addAction(associate_action)
 
     def setup_action(self, action):
         logger.info(f"Starting action: {action}")
