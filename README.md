@@ -65,30 +65,47 @@ python app_v2.py
 
 ### 1. 表格定位 (Table Detection)
 
+<div style="width:100%">
+
 | 模型名称          | 算法框架         | 功能说明                           | 权重来源                          |
 |--------------------|------------------|----------------------------------|---------------------------------------|
-| PP-Structure       | PaddleDetection  | 仅开发表格定位功能进行表格区域检测 |  |
+| PP-Structure       | PaddleDetection  | 仅开放表格定位功能进行表格区域检测 |  |
 | Table-Transformer  | DETR             | 表格区域检测                |   |
 | yolov8m-table-extraction | Yolov8 | 表格区域检测                       |  |
 
+</div>
+
 ### 2. 表格结构识别 (Structure Recognition)
+
+<div style="width:100%">
+
 | 模型名称          | 算法框架         | 功能说明                           | 权重来源                            |
 |--------------------|------------------|----------------------------------|---------------------------------------|
 | Table-Transformer | DETR | 支持行/列/表头/跨行单元格/检测 |  |
 | Cycle-CenterNet    | CenterNet        | 支持有线/无线表格单元格检测 |          |
 | RT-DETR-Cell_det | RT-DETR          | 表格单元格检测            |                          |
 
+</div>
+
 ### 3. 表格文字识别 (Text Recognition)
+
+<div style="width:100%">
+
 | 模型名称          | 算法框架         | 功能说明                           | 权重来源                         |
 |--------------------|------------------|----------------------------------|---------------------------------------|
 | PP-OCRv4           | CRNN+SVTR        | 仅启用文字识别        |                          |
 
+</div>
+
 ### 4. 其他模型
+
+<div style="width:100%">
+
 | 模型名称          | 算法框架         | 功能说明                           | 权重来源                            |
 |--------------------|------------------|----------------------------------|---------------------------------------|
 | YOLOv8-cls/det   | YOLO             | 特殊符号分类/检测(√/×/○)            |          |
 
-
+</div>
 
 ## :page_facing_up:文档资源
 
@@ -103,6 +120,6 @@ python app_v2.py
 | 平台          | 联系方式                                                     |
 | :------------ | :----------------------------------------------------------- |
 | GitHub        | [提交issue](https://github.com/caibucai22/TableAnalysisTool/issues) |
-| 社群:penguin: | 392784757                                                    |
-| 邮箱:mailbox: | caibucai22@gmail.com                                         |
+| 社群 :penguin: | 392784757                                                    |
+| 邮箱 :mailbox: | caibucai22@gmail.com                                         |
 
